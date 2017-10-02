@@ -37,31 +37,74 @@ using namespace std;
 using namespace tas;
 //using namespace mt2_bisect;
 
-float MT2(LorentzVector vec1,LorentzVector vec2, LorentzVector met, bool massive ){
 
-  double pa[3];
-  double pb[3];
-  double pmiss[3];
-  
-  pmiss[0] = 0;
-  pmiss[1] = static_cast<double> (met.Px());
-  pmiss[2] = static_cast<double> (met.Py());
-  
-  pa[0] = static_cast<double> (massive ? vec1.M() : 0);
-  pa[1] = static_cast<double> (vec1.Px());
-  pa[2] = static_cast<double> (vec1.Py());
-  
-  pb[0] = static_cast<double> (massive ? vec2.M() : 0);
-  pb[1] = static_cast<double> (vec2.Px());
-  pb[2] = static_cast<double> (vec2.Py());
-  
-  mt2_bisect::mt2 *mymt2 = new mt2_bisect::mt2();
-  mymt2->set_momenta(pa, pb, pmiss);
-  mymt2->set_mn(0);
-  Float_t MT2=mymt2->get_mt2();
-  delete mymt2;
-  return MT2;
-  
+int gentype_v2(unsigned lep1_index=0,unsigned lep2_index=1, int lep3_index=-1){
+  bool gammafake = false;
+  bool jetfake   = false;
+  unsigned int ngenlep = ngenLepFromTau()+ ngenLep();
+  unsigned int nW(0), nZ(0);
+  bool lep1_real = lep_motherIdSS().at(lep1_index) > 0;
+  bool lep2_real = lep_motherIdSS().at(lep2_index) > 0;
+  bool lep3_real = false;
+  if(lep3_index>0) lep3_real = lep_motherIdSS().at(lep3_index) > 0;
+  vector<int> reallepindex;
+
+  for (unsigned int lepindex = 0;lepindex<lep_p4().size();++lepindex){
+      if(lep_motherIdSS().at(lepindex) > 0) reallepindex.push_back(lepindex);
+      else if(lep_motherIdSS().at(lepindex) == -3) gammafake = true;
+      else                                           jetfake = true;
+      if(lep_isFromW().at(lepindex)) nW++;
+      if(lep_isFromZ().at(lepindex)) nZ++;
+  }
+  //found two real leptons
+  if(lep3_index<0){
+    bool ischargeflip = false;
+    bool isSS = false;
+    if(lep1_real&&lep2_real) {
+      int ilep1 =   lep_genPart_index().at(lep1_index);
+      int ilep2 =   lep_genPart_index().at(lep2_index);
+      bool lep1_chargeflip  =genPart_charge().at(ilep1)!= lep_charge().at(lep1_index);
+      bool lep2_chargeflip  =genPart_charge().at(ilep2)!= lep_charge().at(lep2_index);
+      if (!lep1_chargeflip&&!lep2_chargeflip&&nW==2) return 0; // true SS
+      else if (!lep1_chargeflip&&!lep2_chargeflip) isSS = true; // true SS - but could be still lost lepton WZ
+      if (lep1_chargeflip||lep2_chargeflip)   ischargeflip = true; // charge flip
+    }
+    
+    if(ngenlep>2 || reallepindex.size()>2 || (nW>0 && nZ>0)) return 3; // lostlep
+    if((ngenlep<2 ||!lep1_real||!lep2_real)&&    jetfake) return 4; // jetfake - if double fake with one jet fake and one gamma fake call it jet fake
+    if((ngenlep<2 ||!lep1_real||!lep2_real)&&  gammafake) return 5; // gammafake
+    if((ngenlep<2 ||!lep1_real||!lep2_real)&& !gammafake) return 4; // call all without gamma fake jetfake - safety cut
+    if(isSS) return 0;
+    if(ischargeflip) return 2;
+    
+    cout << "This event was not classified - 2 lepton event - v2" << endl;
+    return 1;
+  } else {
+    //found three real leptons
+    bool ischargeflip = false;
+    bool isthreelep = false;
+    if(lep1_real&&lep2_real&&lep3_real) {
+      int ilep1 =   lep_genPart_index().at(lep1_index);
+      int ilep2 =   lep_genPart_index().at(lep2_index);
+      int ilep3 =   lep_genPart_index().at(lep3_index);
+      bool lep1_chargeflip  =genPart_charge().at(ilep1)!= lep_charge().at(lep1_index);
+      bool lep2_chargeflip  =genPart_charge().at(ilep2)!= lep_charge().at(lep2_index);
+      bool lep3_chargeflip  =genPart_charge().at(ilep3)!= lep_charge().at(lep3_index);
+      if (!lep1_chargeflip&&!lep2_chargeflip&&!lep3_chargeflip&&nW==3) return 0; // true WWW
+      else if (!lep1_chargeflip&&!lep2_chargeflip&&!lep3_chargeflip) isthreelep = true; // true 3l, but could be lost lepton ZZ
+      if (lep1_chargeflip||lep2_chargeflip||lep3_chargeflip)   ischargeflip = true; // charge flip
+    }
+    if(ngenlep>3 || reallepindex.size()>3 || (nW>=2 && nZ>=1) || (nZ>=3)) return 3; // lostlep (2 lep from W and 2 from Z, or 4 from Z)
+    //there is the case of having WZZ with two lost leptons --> ngenlep>3 - correctly put has lostlep
+    if((ngenlep<3 ||!lep1_real||!lep2_real||!lep3_real)&&    jetfake) return 4; // jetfake
+    if((ngenlep<3 ||!lep1_real||!lep2_real||!lep3_real)&&  gammafake) return 5; // gammafake
+    if((ngenlep<3 ||!lep1_real||!lep2_real||!lep3_real)&& !gammafake) return 4; // jetfake
+    if(isthreelep) return 1;
+    if(ischargeflip) return 2;
+    
+    cout << "This event was not classified - 3 lepton event - v2" << endl;
+    return 0;
+  }
 }
 
 float dR(LorentzVector vec1,LorentzVector vec2 ){                                                                                                              
@@ -149,6 +192,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
   histonames.push_back("YieldsCR_SSany_dropMjj_jesup");               hbins.push_back(6); hlow.push_back(0); hup.push_back(6);
   histonames.push_back("YieldsCR_SSany_dropMjj_jesdown");             hbins.push_back(6); hlow.push_back(0); hup.push_back(6);
   histonames.push_back("YieldsCR_SSany_dropMjj");                     hbins.push_back(6); hlow.push_back(0); hup.push_back(6);
+  histonames.push_back("YieldsCR_SSany_dropMjj_test");                 hbins.push_back(6); hlow.push_back(0); hup.push_back(6);
   histonames.push_back("YieldsCR_SSany_dropMjj_butnoMll");            hbins.push_back(6); hlow.push_back(0); hup.push_back(6);
   histonames.push_back("YieldsCR_SSany_dropMjj_rawweight");           hbins.push_back(6); hlow.push_back(0); hup.push_back(6);
   histonames.push_back("YieldsCR_SSany_jesup");                       hbins.push_back(6); hlow.push_back(0); hup.push_back(6);
@@ -231,6 +275,16 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
   histonames.push_back("Mjj_CRlike_allSS_SSpairnotlead2");   hbins.push_back(12);hlow.push_back(20);hup.push_back(260);
   histonames.push_back("Mjj_CRlike_allSS_SSpairnotlead2v2"); hbins.push_back(12);hlow.push_back(20);hup.push_back(260);
   histonames.push_back("Mjj_SRlike_allSS");                  hbins.push_back(12);hlow.push_back(20);hup.push_back(260);//blind the data
+
+  histonames.push_back("Mll_invertdPhiPt_allSFOS");            hbins.push_back(14);hlow.push_back(30);hup.push_back(170);
+  histonames.push_back("Mll_invertdPhiOrPt_allSFOS");          hbins.push_back(14);hlow.push_back(30);hup.push_back(170);
+  histonames.push_back("Mll_invertdPhi_allSFOS");              hbins.push_back(14);hlow.push_back(30);hup.push_back(170);
+  histonames.push_back("Mll_invertPt_allSFOS");                hbins.push_back(14);hlow.push_back(30);hup.push_back(170);
+  histonames.push_back("Mll_invertMET_allSFOS");               hbins.push_back(14);hlow.push_back(30);hup.push_back(170);
+  histonames.push_back("Mll_invertMETdPhiPt_allSFOS");         hbins.push_back(14);hlow.push_back(30);hup.push_back(170);
+  histonames.push_back("Mll_inverteitherMETdPhiPt_allSFOS");   hbins.push_back(14);hlow.push_back(30);hup.push_back(170);
+  histonames.push_back("Mll_SRlike_allSFOS");                  hbins.push_back(14);hlow.push_back(30);hup.push_back(170);//blind the data
+  histonames.push_back("Mll_ge2j_allSFOS");                    hbins.push_back(14);hlow.push_back(30);hup.push_back(170);
   
   histonames.push_back("Mll_CRlike_allSS");                  hbins.push_back(14);hlow.push_back(30);hup.push_back(170);
   histonames.push_back("Mll_CRlike_allSS_SSpairnotlead2");   hbins.push_back(14);hlow.push_back(30);hup.push_back(170);
@@ -258,45 +312,48 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
   histonames.push_back("dPhiMETlll_CRlike_allSFOS");         hbins.push_back(16);hlow.push_back(0.1);hup.push_back(3.3);
   histonames.push_back("dPhiMETlll_CRloose_allSFOS");        hbins.push_back(16);hlow.push_back(0.1);hup.push_back(3.3);
 
+  histonames.push_back("NJ_mumumu_CRlike_allSFOS");     hbins.push_back( 7);hlow.push_back(0.1);hup.push_back(7);
+  histonames.push_back("NJ_eee_CRlike_allSFOS");        hbins.push_back( 7);hlow.push_back(0.1);hup.push_back(7);
+  histonames.push_back("NJ_noteeemmm_CRlike_allSFOS");  hbins.push_back( 7);hlow.push_back(0.1);hup.push_back(7);
+
   //after finding good Mll region test with 2l OS region the in/out ratio
   
   //ee,em,mm,0SFOS,1SFOS,2SFOS
 
   cout << "booking histograms" << endl;
   for(unsigned int i = 0; i<histonames.size(); ++i){
-	string mapname = histonames[i];
-      if(skimFilePrefix.find("Other")!=string::npos){
+    string mapname = histonames[i];
+    if(skimFilePrefix.find("Other")!=string::npos){
 	mapname = histonames[i] + "_Other";
 	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
 	mapname = histonames[i] + "_WHtoWWW";
 	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-      }
-      if(skimFilePrefix.find("Background")!=string::npos){
-	//cout << skimFilePrefix << endl;
-	mapname = histonames[i] + "_trueSS";
-	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-	mapname = histonames[i] + "_chargeflips";
-	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-	mapname = histonames[i] + "_SSLL";
-	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-	mapname = histonames[i] + "_fakes";
-	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-	mapname = histonames[i] + "_doublefakes";
-	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-	mapname = histonames[i] + "_others";
-	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-	mapname = histonames[i] + "_trueWWW";
-	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-	mapname = histonames[i] + "_3lLL";
-	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-	mapname = histonames[i] + "_true3L";
-	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-      }
-      else {
-	mapname = histonames[i] + "_"+skimFilePrefix;
-	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-	//histos[mapname]->Sumw2(); histos[mapname]->SetDirectory(rootdir);
-      }
+    }
+    else if(skimFilePrefix.find("Background")!=string::npos){
+      //cout << skimFilePrefix << endl;
+      mapname = histonames[i] + "_trueSS";
+      if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      mapname = histonames[i] + "_chargeflips";
+      if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      mapname = histonames[i] + "_SSLL";
+      if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      mapname = histonames[i] + "_fakes";//jetfakes
+      if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      mapname = histonames[i] + "_photonfakes";
+      if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      mapname = histonames[i] + "_others";
+      if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      mapname = histonames[i] + "_trueWWW";
+      if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      mapname = histonames[i] + "_3lLL";
+      if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      mapname = histonames[i] + "_true3L";
+      if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+    } else {
+      mapname = histonames[i] + "_"+skimFilePrefix;
+      if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      //histos[mapname]->Sumw2(); histos[mapname]->SetDirectory(rootdir);
+    }
   }
   for(map<string,TH1D*>::iterator h=histos.begin(); h!=histos.end();++h){
     h->second->Sumw2(); h->second->SetDirectory(rootdir);
@@ -321,6 +378,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 
     // Get File Content
     TFile *file = new TFile( currentFile->GetTitle() );
+    string fname = currentFile->GetTitle();
 
     TTree *tree = (TTree*)file->Get("t");
     if(fast) TTreeCache::SetLearnEntries(10);
@@ -374,7 +432,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       vector<int> i2p5;
       for(unsigned int n = 0; n<jets_csv().size();++n){
 	if(fabs(jets_p4()[n].Eta())<2.5) i2p5.push_back(n);
-	if(jets_p4()[n].Pt()>30&&fabs(jets_p4()[n].Eta())<5) ++nj;
+	if(jets_p4()[n].Pt()>20&&fabs(jets_p4()[n].Eta())<5) ++nj;
 	if(jets_p4()[n].Pt()>30&&fabs(jets_p4()[n].Eta())<2.5) ++nj30;
 	if(jets_p4()[n].Pt()>20&&fabs(jets_p4()[n].Eta())<2.5) ++nj20;
 	if(jets_csv()[n]>0.5426&&jets_p4()[n].Pt()>20&&fabs(jets_p4()[n].Eta())<2.4) ++nb;
@@ -385,7 +443,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       vector<int> i2p5_up;
       for(unsigned int n = 0; n<jets_up_csv().size();++n){
 	if(fabs(jets_up_p4()[n].Eta())<2.5) i2p5_up.push_back(n);
-	if(jets_up_p4()[n].Pt()>30&&fabs(jets_up_p4()[n].Eta())<5) ++nj_up;
+	if(jets_up_p4()[n].Pt()>20&&fabs(jets_up_p4()[n].Eta())<5) ++nj_up;
 	if(jets_up_p4()[n].Pt()>30&&fabs(jets_up_p4()[n].Eta())<2.5) ++nj30_up;
 	if(jets_up_p4()[n].Pt()>20&&fabs(jets_up_p4()[n].Eta())<2.5) ++nj20_up;
 	if(jets_up_csv()[n]>0.5426&&jets_up_p4()[n].Pt()>20&&fabs(jets_up_p4()[n].Eta())<2.4) ++nb_up;
@@ -395,7 +453,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       vector<int> i2p5_dn;
       for(unsigned int n = 0; n<jets_dn_csv().size();++n){
 	if(fabs(jets_dn_p4()[n].Eta())<2.5) i2p5_dn.push_back(n);
-	if(jets_dn_p4()[n].Pt()>30&&fabs(jets_dn_p4()[n].Eta())<5) ++nj_dn;
+	if(jets_dn_p4()[n].Pt()>20&&fabs(jets_dn_p4()[n].Eta())<5) ++nj_dn;
 	if(jets_dn_p4()[n].Pt()>30&&fabs(jets_dn_p4()[n].Eta())<2.5) ++nj30_dn;
 	if(jets_dn_p4()[n].Pt()>20&&fabs(jets_dn_p4()[n].Eta())<2.5) ++nj20_dn;
 	if(jets_dn_csv()[n]>0.5426&&jets_dn_p4()[n].Pt()>20&&fabs(jets_dn_p4()[n].Eta())<2.4) ++nb_dn;
@@ -458,8 +516,6 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	MjjL_dn = (jets_dn_p4()[i2p5_dn[0] ]+jets_dn_p4()[i2p5_dn[1] ]).M();
 	Detajj_dn = dEta(jets_dn_p4()[i2p5_dn[0] ],jets_dn_p4()[i2p5_dn[1] ]);
       }
-      //if(jets_p4().size()>1&&njets()>1&&Mjj>0&&fabs(mjj()-Mjj)>0.01) cout << "MJJ " << Mjj << " " << mjj() << endl;
-      //if(jets_p4().size()>1&&njets()>1&&Detajj>0&&fabs(deta_jj()-Detajj)>0.01) cout << "Deta " << Detajj << " " << deta_jj() << endl;
       bool passMDetajj = true;
       if(nj30<2)            passMDetajj = false;
       if(fabs(Detajj)>1.5)  passMDetajj = false;
@@ -509,21 +565,23 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       vector<int> vSS, v3l, v, iSS, i3l;
       for(unsigned int i = 0; i<lep_pdgId().size();++i){
 	bool isSS = false; bool is3l = false;
-	if(lep_pass_VVV_cutbased_tight_noiso()[i]&&fabs(lep_p4()[i].Eta())<2.4&&fabs(lep_ip3d()[i])<0.015){
+	bool isaSS = false; bool isa3l = false;
+	bool islSS = false; bool isl3l = false;
+	if(lep_pass_VVV_cutbased_tight_noiso()[i]&&fabs(lep_p4()[i].Eta())<2.4&&fabs(lep_ip3d()[i])<0.015) {
 	  if(abs(lep_pdgId()[i])==11){
-	    if(fabs(lep_etaSC()[i])<=1.479&&lep_relIso03EA()[i]<0.0588){
+	    if(fabs(lep_etaSC()[i])<=1.479&&lep_relIso03EAv2()[i]<0.0588){
 	      if(lep_p4()[i ].Pt()>20)                          { i3l.push_back(i); is3l = true; }
 	      if(lep_p4()[i ].Pt()>30&&lep_tightCharge()[i]==2) { iSS.push_back(i); isSS = true; }
-	    } else if(fabs(lep_etaSC()[i]) >1.479&&lep_relIso03EA()[i]<0.0571){
+	    } else if(fabs(lep_etaSC()[i]) >1.479&&lep_relIso03EAv2()[i]<0.0571){
 	      if(lep_p4()[i ].Pt()>20)                          { i3l.push_back(i); is3l = true; }
 	      if(lep_p4()[i ].Pt()>30&&lep_tightCharge()[i]==2) { iSS.push_back(i); isSS = true; }
 	    }
-	  } else if(abs(lep_pdgId()[i])==13&&lep_relIso03EA()[i]<0.06){
+	  } else if(abs(lep_pdgId()[i])==13&&lep_relIso03EAv2()[i]<0.06){
 	    if(lep_p4()[i ].Pt()>20) { i3l.push_back(i); is3l = true; }
 	    if(lep_p4()[i ].Pt()>30) { iSS.push_back(i); isSS = true; }
 	  }
 	}
-	if(lep_pass_VVV_cutbased_veto_noiso()[i]&&fabs(lep_p4()[i].Eta())<2.4&&lep_p4()[i ].Pt()>10&&lep_relIso03EA()[i]<=0.4) {
+	if(lep_pass_VVV_cutbased_veto_noiso()[i]&&fabs(lep_p4()[i].Eta())<2.4&&lep_p4()[i ].Pt()>10&&lep_relIso03EAv2()[i]<=0.4) {
 	  v.push_back(i);
 	  if(!isSS) vSS.push_back(i);
 	  if(!is3l) v3l.push_back(i);
@@ -616,7 +674,11 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	bool passonlineTrigger = false;
 	if(nmu>=2&&HLT_DoubleMu() )                               passonlineTrigger = true;
 	if(nmu25>=1&&nel>=1&&HLT_MuEG())                          passonlineTrigger = true;
+	if(nel25>=1&&nmu>=1&&HLT_MuEG())                          passonlineTrigger = true;
 	if(nel25>=1&&nel>=2&&(HLT_DoubleEl()||HLT_DoubleEl_DZ())) passonlineTrigger = true;
+	//if(nmu>=2&&(HLT_DoubleMu_noiso()) )                             passonlineTrigger = true;
+	//if(nmu25>=1&&nel>=1&&(HLT_MuEG_noiso()||HLT_MuEG_noiso_2()))    passonlineTrigger = true;
+	//if(nel25>=1&&nel>=2&&(HLT_DoubleEl_noiso()))                    passonlineTrigger = true;
 	if(!passonlineTrigger) continue;
       }
 
@@ -630,7 +692,8 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	  if(abs(genPart_pdgId()[i])==24&&abs(genPart_motherId()[i])!=25&&abs(genPart_grandmaId()[i])!=25&&genPart_status()[i]==22) { isWnotFromH = true; }
 	  if(isHtoWW&&isWnotFromH) break;
 	}
-	if(isHtoWW&&isWnotFromH) {
+	bool isWHtoWWW = isHtoWW&&isWnotFromH;
+	if(isWHtoWWW) {
 	  sn = "WHtoWWW";
 	  sn2 = "WHtoWWW";
 	}
@@ -639,45 +702,60 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	bool isHtoWW = false;
 	bool isWnotFromH = false;
 	for(unsigned int i = 0; i<genPart_pdgId().size();++i){
-	  if(abs(genPart_pdgId()[i])==24&&abs(genPart_motherId()[i])==25) { isHtoWW = true; }
+	  if(abs(genPart_pdgId()[i])==24&&abs(genPart_motherId()[i])==25&&genPart_status()[i]==22) { isHtoWW = true; }
 	  if(abs(genPart_pdgId()[i])==24&&abs(genPart_motherId()[i])!=25&&abs(genPart_grandmaId()[i])!=25&&genPart_status()[i]==22) { isWnotFromH = true; }
 	  if(isHtoWW&&isWnotFromH) break;
 	}
 	if(isHtoWW&&isWnotFromH) continue;
 	if(iSS.size()>=2){
-	  int nW(0), nZ(0);
-	  if(lep_isFromW()[iSS[0] ]) ++nW;
-	  if(lep_isFromW()[iSS[1] ]) ++nW;
-	  if(lep_isFromZ()[iSS[0] ]) ++nZ;
-	  if(lep_isFromZ()[iSS[1] ]) ++nZ;
-	  if(nW==2&&lep_mc_Id()[iSS[0] ]*lep_mc_Id()[iSS[1] ]>0) sn = "trueSS";//W+W+
-	  else if(nW==2) sn = "chargeflips";//W+W-
-	  else if(nZ==2&&lep_mc_Id()[iSS[0] ]*lep_mc_Id()[iSS[1] ]<=0) sn = "chargeflips";//Z
-	  else if(nZ==2) sn = "SSLL";//ZZ both with a lost lepton
-	  else if(nW==1&&nZ==1) sn = "SSLL";//WZ
-	  else if((nW+nZ)==1) sn = "fakes";
-	  else if((nW+nZ)==0) sn = "doublefakes";
-	  else { sn = "others";
-	   //}
-	  }
+	  int l1(-1),l2(-1);
+	  if(iSS.size()>=2) { l1 = iSS[0]; l2 = iSS[1]; }
+	  int gentype = gentype_v2(l1,l2-1);
+	  if(     gentype==0) sn = "trueSS";
+	  else if(gentype==2) sn = "chargeflips";
+	  else if(gentype==3) sn = "SSLL";
+	  else if(gentype==4) sn = "fakes";
+	  else if(gentype==5) sn = "photonfakes";
+	  else                sn = "others";
 	}
 	if(i3l.size()>=3){
-	  int nW(0), nZ(0);
-	  if(lep_isFromW()[i3l[0] ]) ++nW;
-	  if(lep_isFromW()[i3l[1] ]) ++nW;
-	  if(lep_isFromW()[i3l[2] ]) ++nW;
-	  if(lep_isFromZ()[i3l[0] ]) ++nZ;
-	  if(lep_isFromZ()[i3l[1] ]) ++nZ;
-	  if(lep_isFromZ()[i3l[2] ]) ++nZ;
-	  if(nW==3&&(lep_mc_Id()[i3l[0] ]>0&&lep_mc_Id()[i3l[1] ]>0&&lep_mc_Id()[i3l[2] ]>0)) sn2 = "chargeflips";//W+W+W+ - it could be +++ final state, but at the end this final state will be vetoed, so if reco is ++- (e.g.), then this is a chargeflip
-	  else if(nW==3&&(lep_mc_Id()[i3l[0] ]<0&&lep_mc_Id()[i3l[1] ]<0&&lep_mc_Id()[i3l[2] ]<0)) sn2 = "chargeflips";//W+W+W+ - it could be +++ final state, but at the end this final state will be vetoed, so if reco is ++- (e.g.), then this is a chargeflip
-	  else if(nW==3) sn2 = "trueWWW";
-	  else if(nW==2&&nZ==1) sn2 = "3lLL";//ttZ w/ LL
-	  else if(nW==1&&nZ==2) sn2 = "true3L";//WZ, neglect WZZ as LL
-	  else if(nZ==3) sn2 = "3lLL";//ZZ
-	  else if((nW+nZ)==2) sn2 = "fakes";
-	  else if((nW+nZ)==1) sn2 = "doublefakes";
-	  else { sn2 = "others";//could be triple fakes
+	  int l1(-1), l2(-1), l3(-1);
+	  if(i3l.size()>=3) { l1 = i3l[0]; l2 = i3l[1]; l3 = i3l[2]; }
+	  int gentype = gentype_v2(l1,l2,l3);
+	  if(     gentype==0) sn2 = "trueWWW";
+	  else if(gentype==1) sn2 = "true3L";
+	  else if(gentype==2) sn2 = "chargeflips";
+	  else if(gentype==3) sn2 = "3lLL";
+	  else if(gentype==4) sn2 = "fakes";
+	  else if(gentype==5) sn2 = "photonfakes";
+	  else                sn2 = "others";
+	  
+	  if(sn2=="others"){
+	    int nW(0), nZ(0), nG(0), nF(0);
+	    if(lep_isFromW()[l1]) ++nW;
+	    else if(lep_isFromZ()[l1]) ++nZ;
+	    else if(lep_isFromB()[l1]||lep_isFromC()[l1]||lep_isFromL()[l1]||lep_isFromLF()[l1]) ++nF;
+	    else if(lep_motherIdSS()[l1]==(-3)) ++nG;
+	    if(lep_isFromW()[l2]) ++nW;
+	    else if(lep_isFromZ()[l2]) ++nZ;
+	    else if(lep_isFromB()[l2]||lep_isFromC()[l2]||lep_isFromL()[l2]||lep_isFromLF()[l2]) ++nF;
+	    else if(lep_motherIdSS()[l2]==(-3)) ++nG;
+	    if(lep_isFromW()[l3]) ++nW;
+	    else if(lep_isFromZ()[l3]) ++nZ;
+	    else if(lep_isFromB()[l3]||lep_isFromC()[l3]||lep_isFromL()[l3]||lep_isFromLF()[l3]) ++nF;
+	    else if(lep_motherIdSS()[l3]==(-3)) ++nG;
+	    if(nW==3&&(lep_mc_Id()[l1]>0&&lep_mc_Id()[l2]>0&&lep_mc_Id()[l3]>0)) sn2 = "chargeflips";
+	    else if(nW==3&&(lep_mc_Id()[l1]<0&&lep_mc_Id()[l2]<0&&lep_mc_Id()[l3]<0)) sn2 = "chargeflips";
+	    else if(nW==3) sn2 = "trueWWW";
+	    else if(nW==2&&nZ==1) sn2 = "3lLL";//ttZ w/ LL
+	    else if(nW==1&&nZ==2) sn2 = "true3L";//WZ, neglect WZZ as LL
+	    else if(nZ==3) sn2 = "3lLL";//ZZ
+	    else if((nW+nZ)<3&&nF>0) sn2 = "fakes";
+	    else if((nW+nZ)<3&&nG>0) sn2 = "photonfakes";
+	    else if((nW+nZ)<3&&(nW+nZ)>=1) sn2 = "fakes";//count those as fakes
+	    else sn2 = "others";
+	  
+	    cout << " nW/nZ/nG/nF " << nW << "/" << nZ << "/" << nF << "/" << nG << " fname " << fname << endl;
 	  }
 	}
       }
@@ -745,6 +823,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	if(abs(lep_pdgId()[iSS[0] ])==11&&abs(lep_pdgId()[iSS[1] ])==11&&MET_dn.Pt()>40.&&fabs((lep_p4()[iSS[0] ]+lep_p4()[iSS[1] ]).M()-90.)>10.) ee[32] = true;
 	if(abs(lep_pdgId()[iSS[0] ])==13&&abs(lep_pdgId()[iSS[1] ])==11&&MET_dn.Pt()>40.&&MTmax_dn>90.)                                            em[32] = true;
 	if(abs(lep_pdgId()[iSS[0] ])==11&&abs(lep_pdgId()[iSS[1] ])==13&&MET_dn.Pt()>40.&&MTmax_dn>90.)                                            em[32] = true;
+	if(abs(lep_pdgId()[iSS[0] ])==13&&abs(lep_pdgId()[iSS[1] ])==13)                                                                           mm[32] = true;
 	if((lep_p4()[iSS[0] ]+lep_p4()[iSS[1] ]).M()<40){ ee[32] = false; mm[32] = false;  }
 	ee[33] = ee[32]; em[33] = em[32]; mm[33] = mm[32];
 	if(!passMDetajj_dn){ ee[32] = false; em[32] = false; mm[32] = false; }
@@ -1024,6 +1103,25 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	if(abs(lep_pdgId()[iSS[0] ])==11&&abs(lep_pdgId()[iSS[1] ])==13) { em[45] = true; }
 	if(abs(lep_pdgId()[iSS[0] ])==13&&abs(lep_pdgId()[iSS[1] ])==13) { mm[45] = true; }
       }
+      if(nj30>=2&&nb==0&&passDetajj&&nisoTrack_mt2_cleaned_VVV_cutbased_veto()==0&&nveto3l==0&&nSS>=2&&n3l==3 ){
+	//SS is just tighter pt, so can loop over i3l
+	bool isSS = false;
+	int lep3 = -1; int SS1 = -1; int SS2 = -1;
+	if((lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[1] ])>0) { lep3 = i3l[2]; SS1 = i3l[0]; SS2 = i3l[1]; isSS = true; }
+	if((lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[2] ])>0) { lep3 = i3l[1]; SS1 = i3l[0]; SS2 = i3l[2]; isSS = true; }
+	if((lep_pdgId()[i3l[1] ]*lep_pdgId()[i3l[2] ])>0) { lep3 = i3l[0]; SS1 = i3l[1]; SS2 = i3l[2]; isSS = true; }
+	if(isSS){
+	  bool hasSFOSZ = false;
+	  if((lep_pdgId()[SS1]==(-lep_pdgId()[lep3]))&&(fabs((lep_p4()[SS1]+lep_p4()[lep3]).M()-90.)<=10)) hasSFOSZ = true;
+	  if((lep_pdgId()[SS2]==(-lep_pdgId()[lep3]))&&(fabs((lep_p4()[SS2]+lep_p4()[lep3]).M()-90.)<=10)) hasSFOSZ = true;
+	  if(hasSFOSZ&&abs(lep_pdgId()[SS1])==11&&abs(lep_pdgId()[SS2])==11&&met_pt()>40.&&fabs((lep_p4()[SS1]+lep_p4()[SS2]).M()-90.)>10.) ee[46] = true;
+	  if(hasSFOSZ&&abs(lep_pdgId()[SS1])==13&&abs(lep_pdgId()[SS2])==11&&met_pt()>40.&&MTmax3l>90.)                                     em[46] = true;
+	  if(hasSFOSZ&&abs(lep_pdgId()[SS1])==11&&abs(lep_pdgId()[SS2])==13&&met_pt()>40.&&MTmax3l>90.)                                     em[46] = true;
+	  if(hasSFOSZ&&abs(lep_pdgId()[SS1])==13&&abs(lep_pdgId()[SS2])==13)                                                                mm[46] = true;
+	  if((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<40){ ee[46] = false; mm[46] = false; }
+	  if((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<30){ em[46] = false; }
+	}
+      }
 
       int SFOS[50];
       double pTlll(-1), DPhilllMET(-1);
@@ -1033,7 +1131,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       }
       for(int i = 0; i<50; ++i) { SFOS[i] = -1; }
       //0 : SR, 1: inverted Mll-Z, 2: SR but inverted DPhi,Pt, 3: inverted Mll-Z and inverted DPhi,Pt
-      if(nj<2&&nb==0&&nveto3l==0&&n3l==3){
+      if(nj<2&&nb==0/*&&nveto3l==0*/&&n3l==3&&fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()-90.)>10.){
 	bool OS01 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[1] ]<0);
 	bool OS02 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[2] ]<0);
 	bool OS12 = (lep_pdgId()[i3l[1] ]*lep_pdgId()[i3l[2] ]<0);
@@ -1046,6 +1144,9 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	if(OS12&&SF12) ++SFOScounter;
 	bool pass0(false), pass1(false), pass2(false);
 	bool pass0X(false), pass1X(false), pass2X(false);
+	if(OS01&&SF01&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<20.) SFOScounter = -1;
+	if(OS02&&SF02&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()<20.) SFOScounter = -1;
+	if(OS12&&SF12&&(lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()<20.) SFOScounter = -1;
 	if(abs(lep_charge()[i3l[0] ]+lep_charge()[i3l[1] ]+lep_charge()[i3l[2] ])==3) SFOScounter = -1;
 	if(SFOScounter==0){
 	  pass0 = true;
@@ -1104,7 +1205,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	if(DPhilllMET<2.5&&pTlll<60&&pass2X) SFOS[3] = 2;
       }
       //4-7: as 0-3 but low MET
-      if(nj<2&&nb==0&&nveto3l==0&&n3l==3){
+      if(nj<2&&nb==0/*&&nveto3l==0*/&&n3l==3&&fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()-90.)>10.){
 	bool OS01 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[1] ]<0);
 	bool OS02 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[2] ]<0);
 	bool OS12 = (lep_pdgId()[i3l[1] ]*lep_pdgId()[i3l[2] ]<0);
@@ -1117,6 +1218,9 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	if(OS12&&SF12) ++SFOScounter;
 	bool pass0(false), pass1(false), pass2(false);
 	bool pass0X(false), pass1X(false), pass2X(false);
+	if(OS01&&SF01&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<20.) SFOScounter = -1;
+	if(OS02&&SF02&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()<20.) SFOScounter = -1;
+	if(OS12&&SF12&&(lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()<20.) SFOScounter = -1;
 	if(abs(lep_charge()[i3l[0] ]+lep_charge()[i3l[1] ]+lep_charge()[i3l[2] ])==3) SFOScounter = -1;
 	if(SFOScounter==0){
 	  pass0 = true;
@@ -1176,7 +1280,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	if(DPhilllMET<2.5&&pTlll<60&&pass2X) SFOS[7] = 2;
       }
       //8: SR but >=2j, 9: CR but >=2j, 10: SR but invert either Pt,DPhi,MET, 11: CR but invert either Pt,DPhi,MET
-      if(/*nj<2&&*/nb==0&&nveto3l==0&&n3l==3){
+      if(/*nj<2&&*/nb==0/*&&nveto3l==0*/&&n3l==3&&fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()-90.)>10.){
 	bool OS01 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[1] ]<0);
 	bool OS02 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[2] ]<0);
 	bool OS12 = (lep_pdgId()[i3l[1] ]*lep_pdgId()[i3l[2] ]<0);
@@ -1189,6 +1293,9 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	if(OS12&&SF12) ++SFOScounter;
 	bool pass0(false), pass1(false), pass2(false);
 	bool pass0X(false), pass1X(false), pass2X(false);
+	if(OS01&&SF01&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<20.) SFOScounter = -1;
+	if(OS02&&SF02&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()<20.) SFOScounter = -1;
+	if(OS12&&SF12&&(lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()<20.) SFOScounter = -1;
 	if(abs(lep_charge()[i3l[0] ]+lep_charge()[i3l[1] ]+lep_charge()[i3l[2] ])==3) SFOScounter = -1;
 	if(SFOScounter==0){
 	  pass0 = true;
@@ -1300,7 +1407,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	if(nj<2&&pass2X&&DPhilllMET>2.5&&pTlll<60&&met_pt()>55) SFOS[16] = 2;//invert Pt
       }
       //17: 3lSR+1j+eq3l with MZ, 18: 3lCR+1j+eq3l  w/o MZ, 19: 3lSR+2j+ge3l with MZ, 20: 3lCR+2j+ge3l  w/o MZ
-      if(nj<2&&nb==0&&n3l>=3){
+      if(nj<2&&nb==0&&n3l>=3&&fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()-90.)>10.){
 	bool OS01 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[1] ]<0);
 	bool OS02 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[2] ]<0);
 	bool OS12 = (lep_pdgId()[i3l[1] ]*lep_pdgId()[i3l[2] ]<0);
@@ -1313,6 +1420,9 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	if(OS12&&SF12) ++SFOScounter;
 	bool pass0(false), pass1(false), pass2(false);
 	bool pass0X(false), pass1X(false), pass2X(false);
+	if(OS01&&SF01&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<20.) SFOScounter = -1;
+	if(OS02&&SF02&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()<20.) SFOScounter = -1;
+	if(OS12&&SF12&&(lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()<20.) SFOScounter = -1;
 	if(abs(lep_charge()[i3l[0] ]+lep_charge()[i3l[1] ]+lep_charge()[i3l[2] ])==3) SFOScounter = -1;
 	if(SFOScounter==0){
 	  pass0 = true;
@@ -1356,12 +1466,132 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	if(pass2X&&            n3l>=3) SFOS[20] = 2;
       }
 
+      //SRpresel but no NJ>=2
+      if(/*nj<2&&*/nb==0/*&&nveto3l==0*/&&n3l==3&&fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()-90.)>10.){
+	bool OS01 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[1] ]<0);
+	bool OS02 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[2] ]<0);
+	bool OS12 = (lep_pdgId()[i3l[1] ]*lep_pdgId()[i3l[2] ]<0);
+	bool SF01 = (abs(lep_pdgId()[i3l[0] ])==abs(lep_pdgId()[i3l[1] ]));
+	bool SF02 = (abs(lep_pdgId()[i3l[0] ])==abs(lep_pdgId()[i3l[2] ]));
+	bool SF12 = (abs(lep_pdgId()[i3l[1] ])==abs(lep_pdgId()[i3l[2] ]));
+	int SFOScounter = 0;
+	if(OS01&&SF01) ++SFOScounter;
+	if(OS02&&SF02) ++SFOScounter;
+	if(OS12&&SF12) ++SFOScounter;
+	bool pass0(false), pass1(false), pass2(false);
+	bool pass0X(false), pass1X(false), pass2X(false);
+	if(OS01&&SF01&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<20.) SFOScounter = -1;
+	if(OS02&&SF02&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()<20.) SFOScounter = -1;
+	if(OS12&&SF12&&(lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()<20.) SFOScounter = -1;
+	if(abs(lep_charge()[i3l[0] ]+lep_charge()[i3l[1] ]+lep_charge()[i3l[2] ])==3) SFOScounter = -1;
+	if(SFOScounter==0){
+	  pass0 = true;
+	  pass0X = true;
+	  if(SF01&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<20.) pass0 = false;
+	  if(SF02&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()<20.) pass0 = false;
+	  if(SF12&&(lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()<20.) pass0 = false;
+	  if(SF01&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<20.) pass0X = false;
+	  if(SF02&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()<20.) pass0X = false;
+	  if(SF12&&(lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()<20.) pass0X = false;
+	  bool atleastoneSFOSZ = false;
+	  if(SF01&&abs(lep_pdgId()[i3l[0] ])==11&&fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()-90.)<15.) { pass0 = false; if(OS01) atleastoneSFOSZ = true; }
+	  if(SF02&&abs(lep_pdgId()[i3l[0] ])==11&&fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()-90.)<15.) { pass0 = false; if(OS02) atleastoneSFOSZ = true; }
+	  if(SF12&&abs(lep_pdgId()[i3l[1] ])==11&&fabs((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()-90.)<15.) { pass0 = false; if(OS12) atleastoneSFOSZ = true; }
+	  if(!atleastoneSFOSZ) pass0X = false;
+	}
+	if(SFOScounter==1){
+	  pass1 = true;
+	  pass1X = true;
+	  //if(met_pt()<45) pass1=false;
+	  //if(met_pt()<45) pass1X=false;
+	  bool atleastoneSFOSZ = false;
+	  if(OS01&&SF01&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()>55.&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<110.) { pass1 = false; atleastoneSFOSZ = true; }
+	  if(OS02&&SF02&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()>55.&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()<110.) { pass1 = false; atleastoneSFOSZ = true; }
+	  if(OS12&&SF12&&(lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()>55.&&(lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()<110.) { pass1 = false; atleastoneSFOSZ = true; }
+	  if(!atleastoneSFOSZ) pass1X = false;
+	}
+	if(SFOScounter==2){
+	  pass2 = true;
+	  pass2X = true;
+	  //if(met_pt()<55) pass2=false;
+	  //if(met_pt()<55) pass2X=false;
+	  bool atleastoneSFOSZ = false;
+	  if(OS01&&SF01&&fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()-90.)<20.) { pass2 = false; atleastoneSFOSZ = true; }
+	  if(OS02&&SF02&&fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()-90.)<20.) { pass2 = false; atleastoneSFOSZ = true; }
+	  if(OS12&&SF12&&fabs((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()-90.)<20.) { pass2 = false; atleastoneSFOSZ = true; }
+	  if(!atleastoneSFOSZ) pass2X = false;
+	}
+	//CR but ge2j
+	if(/*nj>=2&&DPhilllMET>2.7&&pTlll>60&&*/pass0X) SFOS[21] = 0;
+	if(/*nj>=2&&DPhilllMET>2.5&&pTlll>60&&*/pass1X) SFOS[21] = 1;
+	if(/*nj>=2&&DPhilllMET>2.5&&pTlll>60&&*/pass2X) SFOS[21] = 2;
+      }
+
+      for(int i = 0; i<50; ++i){
+	if((ee[i]||em[i]||mm[i])&&n3l>=3){
+	  bool OS01 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[1] ]<0);
+	  bool OS02 = (lep_pdgId()[i3l[0] ]*lep_pdgId()[i3l[2] ]<0);
+	  bool OS12 = (lep_pdgId()[i3l[1] ]*lep_pdgId()[i3l[2] ]<0);
+	  bool SF01 = (abs(lep_pdgId()[i3l[0] ])==abs(lep_pdgId()[i3l[1] ]));
+	  bool SF02 = (abs(lep_pdgId()[i3l[0] ])==abs(lep_pdgId()[i3l[2] ]));
+	  bool SF12 = (abs(lep_pdgId()[i3l[1] ])==abs(lep_pdgId()[i3l[2] ]));
+	  if(OS01&&SF01&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()<20.) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(OS02&&SF02&&(lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()<20.) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(OS12&&SF12&&(lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()<20.) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M()-90.)<10.) { ee[i] = false; em[i] = false; mm[i] = false; }
+	}
+	if(nSS>=1){
+	  if(fname.find("wjets")!=string::npos&&abs(lep_pdgId()[iSS[0] ])==11&&lep_motherIdSS()[iSS[0] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fname.find("wjets")!=string::npos&&abs(lep_pdgId()[iSS[0] ])==13&&lep_motherIdSS()[iSS[0] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fname.find("dy_")  !=string::npos&&abs(lep_pdgId()[iSS[0] ])==11&&lep_motherIdSS()[iSS[0] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fname.find("dy_")  !=string::npos&&abs(lep_pdgId()[iSS[0] ])==13&&lep_motherIdSS()[iSS[0] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fname.find("ttbar_")  !=string::npos&&abs(lep_pdgId()[iSS[0] ])==11&&lep_motherIdSS()[iSS[0] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fname.find("ttbar_")  !=string::npos&&abs(lep_pdgId()[iSS[0] ])==13&&lep_motherIdSS()[iSS[0] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	}
+	if(nSS>=2){
+	  if(fname.find("wjets")!=string::npos&&abs(lep_pdgId()[iSS[1] ])==11&&lep_motherIdSS()[iSS[1] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fname.find("wjets")!=string::npos&&abs(lep_pdgId()[iSS[1] ])==13&&lep_motherIdSS()[iSS[1] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fname.find("dy_")  !=string::npos&&abs(lep_pdgId()[iSS[1] ])==11&&lep_motherIdSS()[iSS[1] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fname.find("dy_")  !=string::npos&&abs(lep_pdgId()[iSS[1] ])==13&&lep_motherIdSS()[iSS[1] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fname.find("ttbar_")  !=string::npos&&abs(lep_pdgId()[iSS[1] ])==11&&lep_motherIdSS()[iSS[1] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	  if(fname.find("ttbar_")  !=string::npos&&abs(lep_pdgId()[iSS[1] ])==13&&lep_motherIdSS()[iSS[1] ]==(-3)) { ee[i] = false; em[i] = false; mm[i] = false; }
+	}
+	if(n3l>=1){
+	  if(fname.find("wjets")!=string::npos&&abs(lep_pdgId()[i3l[0] ])==11&&lep_motherIdSS()[i3l[0] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("wjets")!=string::npos&&abs(lep_pdgId()[i3l[0] ])==13&&lep_motherIdSS()[i3l[0] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("dy_")  !=string::npos&&abs(lep_pdgId()[i3l[0] ])==11&&lep_motherIdSS()[i3l[0] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("dy_")  !=string::npos&&abs(lep_pdgId()[i3l[0] ])==13&&lep_motherIdSS()[i3l[0] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("ttbar_")  !=string::npos&&abs(lep_pdgId()[i3l[0] ])==11&&lep_motherIdSS()[i3l[0] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("ttbar_")  !=string::npos&&abs(lep_pdgId()[i3l[0] ])==13&&lep_motherIdSS()[i3l[0] ]==(-3)) { SFOS[i]=-1; }
+	}
+	if(n3l>=2){
+	  if(fname.find("wjets")!=string::npos&&abs(lep_pdgId()[i3l[1] ])==11&&lep_motherIdSS()[i3l[1] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("wjets")!=string::npos&&abs(lep_pdgId()[i3l[1] ])==13&&lep_motherIdSS()[i3l[1] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("dy_")  !=string::npos&&abs(lep_pdgId()[i3l[1] ])==11&&lep_motherIdSS()[i3l[1] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("dy_")  !=string::npos&&abs(lep_pdgId()[i3l[1] ])==13&&lep_motherIdSS()[i3l[1] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("ttbar_")  !=string::npos&&abs(lep_pdgId()[i3l[1] ])==11&&lep_motherIdSS()[i3l[1] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("ttbar_")  !=string::npos&&abs(lep_pdgId()[i3l[1] ])==13&&lep_motherIdSS()[i3l[1] ]==(-3)) { SFOS[i]=-1; }
+	}
+	if(n3l>=3){
+	  if(fname.find("wjets")!=string::npos&&abs(lep_pdgId()[i3l[2] ])==11&&lep_motherIdSS()[i3l[2] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("wjets")!=string::npos&&abs(lep_pdgId()[i3l[2] ])==13&&lep_motherIdSS()[i3l[2] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("dy_")  !=string::npos&&abs(lep_pdgId()[i3l[2] ])==11&&lep_motherIdSS()[i3l[2] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("dy_")  !=string::npos&&abs(lep_pdgId()[i3l[2] ])==13&&lep_motherIdSS()[i3l[2] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("ttbar_")  !=string::npos&&abs(lep_pdgId()[i3l[2] ])==11&&lep_motherIdSS()[i3l[2] ]==(-3)) { SFOS[i]=-1; }
+	  if(fname.find("ttbar_")  !=string::npos&&abs(lep_pdgId()[i3l[2] ])==13&&lep_motherIdSS()[i3l[2] ]==(-3)) { SFOS[i]=-1; }
+	}
+      }
+      
       if(ee[0])      *eventstocheckEE    << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
       if(em[0])      *eventstocheckEM    << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
       if(mm[0])      *eventstocheckMM    << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
       if(SFOS[0]==0) *eventstocheck0SFOS << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
       if(SFOS[0]==1) *eventstocheck1SFOS << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
       if(SFOS[0]==2) *eventstocheck2SFOS << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
+
+      if(     SFOS[21]>=1&&abs(lep_pdgId()[i3l[0] ])==11&&abs(lep_pdgId()[i3l[1] ])==11&&abs(lep_pdgId()[i3l[2] ])==11) histos["NJ_eee_CRlike_allSFOS_"      +sn2]->Fill(nj,weight);
+      else if(SFOS[21]>=1&&abs(lep_pdgId()[i3l[0] ])==13&&abs(lep_pdgId()[i3l[1] ])==13&&abs(lep_pdgId()[i3l[2] ])==13) histos["NJ_mumumu_CRlike_allSFOS_"   +sn2]->Fill(nj,weight);
+      else if(SFOS[21]>=1                                                                                             ) histos["NJ_noteeemmm_CRlike_allSFOS_"+sn2]->Fill(nj,weight);
 
       //cout << sn << " " << sn2 << endl;
       if(!isData()){
@@ -1545,6 +1775,14 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       if(SFOS[1]==0)     histos["YieldsCR_SSany_dropMjj_rawweight_"     +sn2]->Fill(3.,weight);
       if(SFOS[1]==1)     histos["YieldsCR_SSany_dropMjj_rawweight_"     +sn2]->Fill(4.,weight);
       if(SFOS[1]==2)     histos["YieldsCR_SSany_dropMjj_rawweight_"     +sn2]->Fill(5.,weight);
+      
+      if(ee[46])         histos["YieldsCR_SSany_dropMjj_test_"+sn2]->Fill(0.,weight*lepSF3l);
+      if(em[46])         histos["YieldsCR_SSany_dropMjj_test_"+sn2]->Fill(1.,weight*lepSF3l);
+      if(mm[46])         histos["YieldsCR_SSany_dropMjj_test_"+sn2]->Fill(2.,weight*lepSF3l);
+      if(SFOS[1]==0)     histos["YieldsCR_SSany_dropMjj_test_"+sn2]->Fill(3.,weight*lepSF3l);
+      if(SFOS[1]==1)     histos["YieldsCR_SSany_dropMjj_test_"+sn2]->Fill(4.,weight*lepSF3l);
+      if(SFOS[1]==2)     histos["YieldsCR_SSany_dropMjj_test_"+sn2]->Fill(5.,weight*lepSF3l);
+      
       if(ee[ 6]||ee[13]) histos["YieldsCR_SSany_dropMjj_"     +sn2]->Fill(0.,weight*lepSF3l);
       if(em[ 6]||em[13]) histos["YieldsCR_SSany_dropMjj_"     +sn2]->Fill(1.,weight*lepSF3l);
       if(mm[ 6]||mm[13]) histos["YieldsCR_SSany_dropMjj_"     +sn2]->Fill(2.,weight*lepSF3l);
@@ -1674,11 +1912,17 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	    if(OS01&&SF01) histos["Mll_SRlike_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	    if(OS02&&SF02) histos["Mll_SRlike_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	    if(OS12&&SF12) histos["Mll_SRlike_1SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	    if(OS01&&SF01) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	    if(OS02&&SF02) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	    if(OS12&&SF12) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  }
 	  if(SFOS[0]==2){
 	    if(OS01&&SF01) histos["Mll_SRlike_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	    if(OS02&&SF02) histos["Mll_SRlike_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	    if(OS12&&SF12) histos["Mll_SRlike_2SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	    if(OS01&&SF01) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	    if(OS02&&SF02) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	    if(OS12&&SF12) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	    if(OS01&&SF01&&OS02&&SF02){
 	      if(fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()-90.)>fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()-90.)){
 		histos["Mll_SRlike_MllclosestZ_2SFOS_" +sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
@@ -1715,11 +1959,17 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	  if(OS01&&SF01) histos["Mll_SRlike_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_SRlike_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_SRlike_1SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if(SFOS[1]==2){
 	  if(OS01&&SF01) histos["Mll_SRlike_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_SRlike_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_SRlike_2SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_SRlike_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS01&&SF01&&OS02&&SF02){
 	      if(fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M()-90.)>fabs((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M()-90.)){
 		histos["Mll_SRlike_MllclosestZ_2SFOS_" +sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
@@ -1755,81 +2005,129 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	  if(OS01&&SF01) histos["Mll_invertdPhiPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertdPhiPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertdPhiPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if(((SFOS[10]==1)||(SFOS[11]==1))&&met_pt()>45){
 	  if(OS01&&SF01) histos["Mll_invertdPhiOrPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertdPhiOrPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertdPhiOrPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertdPhiOrPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertdPhiOrPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertdPhiOrPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[4]==1)||(SFOS[5]==1)){
 	  if(OS01&&SF01) histos["Mll_invertMET_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertMET_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertMET_1SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertMET_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertMET_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertMET_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[6]==1)||(SFOS[7]==1)){
 	  if(OS01&&SF01) histos["Mll_invertMETdPhiPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertMETdPhiPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertMETdPhiPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[2]==2)||(SFOS[3]==2)){
 	  if(OS01&&SF01) histos["Mll_invertdPhiPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertdPhiPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertdPhiPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if(((SFOS[10]==2)||(SFOS[11]==2))&&met_pt()>55){
 	  if(OS01&&SF01) histos["Mll_invertdPhiOrPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertdPhiOrPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertdPhiOrPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertdPhiOrPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertdPhiOrPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertdPhiOrPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[4]==2)||(SFOS[5]==2)){
 	  if(OS01&&SF01) histos["Mll_invertMET_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertMET_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertMET_2SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertMET_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertMET_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertMET_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[6]==2)||(SFOS[7]==2)){
 	  if(OS01&&SF01) histos["Mll_invertMETdPhiPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertMETdPhiPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertMETdPhiPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[8]==1)||(SFOS[9]==1)){
 	  if(OS01&&SF01) histos["Mll_ge2j_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_ge2j_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_ge2j_1SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_ge2j_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_ge2j_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_ge2j_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[8]==2)||(SFOS[9]==2)){
 	  if(OS01&&SF01) histos["Mll_ge2j_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_ge2j_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_ge2j_2SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_ge2j_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_ge2j_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_ge2j_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[10]==1)||(SFOS[11]==1)){
 	  if(OS01&&SF01) histos["Mll_inverteitherMETdPhiPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_inverteitherMETdPhiPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_inverteitherMETdPhiPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_inverteitherMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_inverteitherMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_inverteitherMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[10]==2)||(SFOS[11]==2)){
 	  if(OS01&&SF01) histos["Mll_inverteitherMETdPhiPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_inverteitherMETdPhiPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_inverteitherMETdPhiPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_inverteitherMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_inverteitherMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_inverteitherMETdPhiPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[13]==1)||(SFOS[14]==1)){
 	  if(OS01&&SF01) histos["Mll_invertdPhi_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertdPhi_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertdPhi_1SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertdPhi_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertdPhi_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertdPhi_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[13]==2)||(SFOS[14]==2)){
 	  if(OS01&&SF01) histos["Mll_invertdPhi_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertdPhi_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertdPhi_2SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertdPhi_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertdPhi_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertdPhi_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[15]==1)||(SFOS[16]==1)){
 	  if(OS01&&SF01) histos["Mll_invertPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertPt_1SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if((SFOS[15]==2)||(SFOS[16]==2)){
 	  if(OS01&&SF01) histos["Mll_invertPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
 	  if(OS02&&SF02) histos["Mll_invertPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	  if(OS12&&SF12) histos["Mll_invertPt_2SFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS01&&SF01) histos["Mll_invertPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[1] ]).M(),weight*lepSF3l);
+	  if(OS02&&SF02) histos["Mll_invertPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[0] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
+	  if(OS12&&SF12) histos["Mll_invertPt_allSFOS_"+sn2]->Fill((lep_p4()[i3l[1] ]+lep_p4()[i3l[2] ]).M(),weight*lepSF3l);
 	}
 	if(SFOS[20]>=0&&SFOS[20]<=2) histos["MET_CRloose_allSFOS_"        +sn2]->Fill(met_pt(),weight*lepSF3l);
 	if(SFOS[20]>=0&&SFOS[20]<=2) {
