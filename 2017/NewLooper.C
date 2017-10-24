@@ -35,8 +35,11 @@ using namespace tas;
 int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFilePrefix = "test") {
 
   vector<myevt> e;
-  addeventtocheck(e,1,36545,5920176);
-
+  //  addeventtocheck(e,1, 297, 59381);
+  //  addeventtocheck(e,1,3760,751827);
+  //  addeventtocheck(e,1,4965,992630);
+  addeventtocheck(e,276361,248, 475159525);
+  
   // Benchmark
   TBenchmark *bmark = new TBenchmark();
   bmark->Start("benchmark");
@@ -87,6 +90,13 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
   vector<int> hbins; hbins.clear();
   vector<float> hlow; hlow.clear();
   vector<float> hup; hup.clear();
+
+  histonames.push_back("RawSignalRegion");                     hbins.push_back(6); hlow.push_back(    0); hup.push_back(6);
+  histonames.push_back("RawApplicationRegion");                hbins.push_back(6); hlow.push_back(    0); hup.push_back(6);
+  histonames.push_back("RawWZControlRegion");                  hbins.push_back(6); hlow.push_back(    0); hup.push_back(6);
+  histonames.push_back("RawSignalRegionPresel");               hbins.push_back(6); hlow.push_back(    0); hup.push_back(6);
+  histonames.push_back("RawApplicationRegionPresel");          hbins.push_back(6); hlow.push_back(    0); hup.push_back(6);
+  histonames.push_back("RawWZControlRegionPresel");            hbins.push_back(6); hlow.push_back(    0); hup.push_back(6);
 
   histonames.push_back("SignalRegionPrecleaning");             hbins.push_back(6); hlow.push_back(    0); hup.push_back(6);
   histonames.push_back("SignalRegion");                        hbins.push_back(6); hlow.push_back(    0); hup.push_back(6);
@@ -162,21 +172,29 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       if(weight>100) cout << weight << " " << currentFile->GetTitle() << endl;
       if(isData()) weight = 1.;
 
-      // bool checkevent = false;
-      //for(unsigned int i = 0; i<e.size();++i){
-      //if(e[i].run!=tas::run() ) continue;
-      //if(e[i].ls !=tas::lumi()) continue;
-      //if(e[i].evt!=tas::evt() ) continue;
-      //checkevent = true;
-      //cout << "Check event " << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
-      //break;
-      //}
+      bool checkevent = false;
+      for(unsigned int i = 0; i<e.size();++i){
+	if(e[i].run!=tas::run() ) continue;
+	if(e[i].ls !=tas::lumi()) continue;
+	if(e[i].evt!=tas::evt() ) continue;
+	checkevent = true;
+	cout << "Check event " << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
+	break;
+      }
       LorentzVector MET; MET.SetPxPyPzE(met_pt()*TMath::Cos(met_phi()),met_pt()*TMath::Sin(met_phi()),0,met_pt());
       int nj(0), nb(0), nj30(0);
       getalljetnumbers(nj,nj30,nb);
       float Mjj = -1;
       float MjjL = -1; float Detajj = -1;
       getMjjAndDeta(Mjj,MjjL,Detajj);
+      if(checkevent) cout << "nj30 " << nj30 << " nj " << nj << " nb " << nb << " Mjj " << Mjj << " MjjL " << MjjL << " Detajj " << Detajj << endl;
+      if(checkevent){
+	for(unsigned int i = 0; i<jets_p4().size(); ++i){
+	  cout << "jet pT " << jets_p4()[i].Pt() << " eta " << jets_p4()[i].Eta() << " CSV " << jets_csv()[i];// << endl;
+	  for(unsigned int j = i+1; j<jets_p4().size(); ++j) cout << " M"<<i<<j<< " " << (jets_p4()[i]+jets_p4()[j]).M() << " (dR " << dR(jets_p4()[i],jets_p4()[j]) << ")";
+	  cout << endl;
+	}
+      }
 
       vector<int> vSS,   v3l,   iSS,   i3l; //lepton indices for both the SS and 3l signal regions
       vector<int> vaSS,  va3l,  iaSS,  ia3l;//loose, but not tight leptons.
@@ -190,19 +208,33 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       int nvetoa3l = va3l.size();
       int naSS = iaSS.size();
       int na3l = ia3l.size();
+      if(checkevent) cout << "nSS " << nSS << " n3l " << n3l << " naSS " << naSS << " na3l " << na3l << " nvetoaSS " << nvetoaSS << " nvetoa3l " << nvetoa3l << " ntracks " << nisoTrack_mt2_cleaned_VVV_cutbased_veto() << endl;
+      if(checkevent){
+	for(unsigned int i = 0; i<lep_pdgId().size();++i){
+	  cout << "lep " << lep_pdgId()[i] << " Pt " << lep_p4()[i].Pt() << " eta " << lep_p4()[i].Eta() << " ID t/l/v/trig " << lep_pass_VVV_cutbased_tight_noiso()[i] << "/" << lep_pass_VVV_cutbased_fo_noiso()[i] << "/" << lep_pass_VVV_cutbased_veto_noiso()[i] << "/" << lep_isTriggerSafe_v1()[i] << " iso " << lep_relIso03EAv2()[i] << " ip3d " << lep_ip3d()[i] << " losthits " << lep_lostHits()[i] << " t.q " << lep_tightCharge()[i];
+	  for(unsigned int j = i+1; j<lep_pdgId().size();++j) { cout << " M" << i << j << " " << (lep_p4()[i]+lep_p4()[j]).M();
+	    for(unsigned int k = j+1; k<lep_pdgId().size();++k) cout << " M" << i << j << k << " " << (lep_p4()[i]+lep_p4()[j]+lep_p4()[k]).M() << " Pt " <<  (lep_p4()[i]+lep_p4()[j]+lep_p4()[k]).Pt() << " DPhiMET " << dPhi( (lep_p4()[i]+lep_p4()[j]+lep_p4()[k]),MET); }
+	  cout << endl;
+	}
+      }
       
       if((n3l+na3l)<2) continue;
       bool passofflineforTrigger = passofflineTriggers(i3l, ia3l);
       if(!passofflineforTrigger) continue;
+      if(checkevent) cout << "pass offline" << endl;
       
       if(isData()){
 	if(!passFilters()) continue;
+	if(checkevent) cout << "pass filter" << endl;
 	duplicate_removal::DorkyEventIdentifier id(tas::run(), tas::evt(), tas::lumi());
-	if( is_duplicate(id)        ) { /*cout << "Event " << tas::run() << ":" << tas::lumi() << ":" << tas::run() << " is duplicated." << endl;*/ continue; }
+	if( is_duplicate(id)        ) { continue; }
+	if(checkevent) cout << "pass duplicate" << endl;
 	if( !goodrun(tas::run(), tas::lumi()) ) continue;
+	if(checkevent) cout << "pass goodrun" << endl;
 	bool passonlineTrigger = passonlineTriggers(i3l, ia3l);//currently applied only to data
 	if(!passonlineTrigger) continue;
       }
+      if(checkevent) cout << "pass online" << endl;
 
       string sn = skimFilePrefix;
       string sn2 = skimFilePrefix;
@@ -224,7 +256,8 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	 vector<int> temp; temp.push_back(iSS[0]); temp.push_back(iaSS[0]);
 	 MTmax = calcMTmax(temp,MET);
        }
-       float MTmax3l = calcMTmax(i3l,MET);
+       float MTmax3l = calcMTmax(i3l,MET,true);
+       if(checkevent) cout << "MET " << MET.Pt() << " MTmax " << MTmax << " MTmax3l " << MTmax3l << endl;
 
        int SRSS[6]; bool selects3l[6];
        int SR3l[6];
@@ -263,6 +296,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
        fillSRhisto(histos, "WZControlRegionPreselPrecleaning",   sn2,sn2, SRSS[5], SR3l[5], weight, weight);
 
 
+       if(checkevent) cout << "passed       SRSS " << SRSS[0] << " SR3l " << SR3l[0] << " ARSS " << SRSS[2] << " AR3l " << SR3l[2] << " CRSS " << SRSS[4] << " CR3l " << SR3l[4] << endl;
        //if(SRSS[2]==0) cout << __LINE__ << endl;
        for(int i = 0; i<6; ++i) {
 	 if(!selects3l[i]){
@@ -271,6 +305,8 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	 else if(vetophotonprocess(fname,isphoton3l)){ SRSS[i] = -1; }
 	 if(vetophotonprocess(fname,isphoton3l))     { SR3l[i] = -1; }
        }
+       if(checkevent) cout << "photonpassed SRSS " << SRSS[0] << " SR3l " << SR3l[0] << " ARSS " << SRSS[2] << " AR3l " << SR3l[2] << " CRSS " << SRSS[4] << " CR3l " << SR3l[4] << endl;
+
 
        if(!isData()){//SR is blinded
 	 fillSRhisto(histos, "SignalRegion",       sn, sn2, SRSS[0], SR3l[0], weight, weight);
@@ -281,11 +317,24 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
        fillSRhisto(histos, "WZControlRegion",         sn2,sn2, SRSS[4], SR3l[4], weight, weight);
        fillSRhisto(histos, "WZControlRegionPresel",   sn2,sn2, SRSS[5], SR3l[5], weight, weight);
 
+       if(!isData()){//SR is blinded
+	 fillSRhisto(histos, "RawSignalRegion",       sn, sn2, SRSS[0], SR3l[0], 1., 1.);
+	 fillSRhisto(histos, "RawSignalRegionPresel", sn, sn2, SRSS[1], SR3l[1], 1., 1.);
+       }
+       fillSRhisto(histos, "RawApplicationRegion",       sn, sn2, SRSS[2], SR3l[2], 1., 1.);
+       fillSRhisto(histos, "RawApplicationRegionPresel", sn, sn2, SRSS[3], SR3l[3], 1., 1.);
+       fillSRhisto(histos, "RawWZControlRegion",         sn2,sn2, SRSS[4], SR3l[4], 1., 1.);
+       fillSRhisto(histos, "RawWZControlRegionPresel",   sn2,sn2, SRSS[5], SR3l[5], 1., 1.);
+
       if(storeeventnumbers){
 	addeventtolist(SRSS[0], SR3l[0], SREE, SREM, SRMM, SR0SFOS, SR1SFOS, SR2SFOS);
 	addeventtolist(SRSS[2], SR3l[2], AREE, AREM, ARMM, AR0SFOS, AR1SFOS, AR2SFOS);
 	addeventtolist(SRSS[4], SR3l[4], CREE, CREM, CRMM, CR0SFOS, CR1SFOS, CR2SFOS);
+	//addeventtolist(SRSS[1], SR3l[1], SREE, SREM, SRMM, SR0SFOS, SR1SFOS, SR2SFOS);
+	//addeventtolist(SRSS[3], SR3l[3], AREE, AREM, ARMM, AR0SFOS, AR1SFOS, AR2SFOS);
+	//addeventtolist(SRSS[5], SR3l[5], CREE, CREM, CRMM, CR0SFOS, CR1SFOS, CR2SFOS);
       }
+      if(checkevent) cout << endl;
       
     }//event loop
   
@@ -298,13 +347,13 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
     cout << Form( "ERROR: number of events from files (%d) is not equal to total number of events (%d)", nEventsChain, nEventsTotal ) << endl;
   }
   if(storeeventnumbers){
-    storeeventlist("testlogs/newSR", skimFilePrefix, SREE, SREM, SRMM, SR0SFOS, SR1SFOS, SR2SFOS);
-    storeeventlist("testlogs/newAR", skimFilePrefix, AREE, AREM, ARMM, AR0SFOS, AR1SFOS, AR2SFOS);
-    storeeventlist("testlogs/newCR", skimFilePrefix, CREE, CREM, CRMM, CR0SFOS, CR1SFOS, CR2SFOS);
+    storeeventlist("data/SR", skimFilePrefix, SREE, SREM, SRMM, SR0SFOS, SR1SFOS, SR2SFOS);
+    storeeventlist("data/AR", skimFilePrefix, AREE, AREM, ARMM, AR0SFOS, AR1SFOS, AR2SFOS);
+    storeeventlist("data/CR", skimFilePrefix, CREE, CREM, CRMM, CR0SFOS, CR1SFOS, CR2SFOS);
   }
-
-  //SaveHistosToFile("testlogs/newLooper.root",histos,true,true);
-  SaveHistosToFile("testlogs/testV2.root",histos,true,true);
+  
+  //SaveHistosToFile("rootfiles/newLooper.root",histos,true,true);
+  //SaveHistosToFile("testlogs/testV2.root",histos,true,true);
 
   // return
   bmark->Stop("benchmark");

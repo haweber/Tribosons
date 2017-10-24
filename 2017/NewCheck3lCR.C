@@ -255,11 +255,11 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       }
       
       float MTmax      = calcMTmax(iSS,MET);
-      float MTmax3l    = calcMTmax(i3l,MET);
+      float MTmax3l    = calcMTmax(i3l,MET,true);
       float MTmax_up   = calcMTmax(iSS,MET_up);
-      float MTmax3l_up = calcMTmax(i3l,MET_up);
+      float MTmax3l_up = calcMTmax(i3l,MET_up,true);
       float MTmax_dn   = calcMTmax(iSS,MET_dn);
-      float MTmax3l_dn = calcMTmax(i3l,MET_dn);
+      float MTmax3l_dn = calcMTmax(i3l,MET_dn,true);
 
       int SRSS[15]; bool selects3l[15];
       int SR3l[15];

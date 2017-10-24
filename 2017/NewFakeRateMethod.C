@@ -62,6 +62,17 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
   vector<int> hbins; hbins.clear();
   vector<float> hlow; hlow.clear();
   vector<float> hup; hup.clear();
+  histonames.push_back("FakeEstimationEvsMu");                          hbins.push_back( 2); hlow.push_back(    0); hup.push_back(2);
+  histonames.push_back("SRyieldEvsMu");                                 hbins.push_back( 2); hlow.push_back(    0); hup.push_back(2);
+  histonames.push_back("RawSRyieldEvsMu");                              hbins.push_back( 2); hlow.push_back(    0); hup.push_back(2);
+  histonames.push_back("ARyieldEvsMu");                                 hbins.push_back( 2); hlow.push_back(    0); hup.push_back(2);
+  histonames.push_back("RawARyieldEvsMu");                              hbins.push_back( 2); hlow.push_back(    0); hup.push_back(2);
+  histonames.push_back("PreselFakeEstimationEvsMu");                    hbins.push_back( 2); hlow.push_back(    0); hup.push_back(2);
+  histonames.push_back("PreselSRyieldEvsMu");                           hbins.push_back( 2); hlow.push_back(    0); hup.push_back(2);
+  histonames.push_back("RawPreselSRyieldEvsMu");                        hbins.push_back( 2); hlow.push_back(    0); hup.push_back(2);
+  histonames.push_back("PreselARyieldEvsMu");                           hbins.push_back( 2); hlow.push_back(    0); hup.push_back(2);
+  histonames.push_back("RawPreselARyieldEvsMu");                        hbins.push_back( 2); hlow.push_back(    0); hup.push_back(2);
+
   histonames.push_back("SRyield");                                      hbins.push_back( 6); hlow.push_back(    0); hup.push_back(6);
   histonames.push_back("PreselSRyield");                                hbins.push_back( 6); hlow.push_back(    0); hup.push_back(6);
   //use cone correction only to extract fake rate
@@ -204,7 +215,9 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       string temp = process(fname,true ,iSS,iaSS);
       string temp2 = process(fname,false,i3l,ia3l);
       bool isphotonSS = (temp =="photonfakes");
-      bool isphoton3l = (temp2=="photonfakes");
+      bool isphoton3l = (temp2=="photonfakes");   
+      bool isfakeSS = (temp =="fakes");
+      bool isfake3l = (temp2=="fakes");
       if(sn.find("Other")!=string::npos&&splitVH(fname)){ sn = "WHtoWWW"; sn2 = sn; }
       else if(sn.find("Background")!=string::npos&&splitVH(fname)) continue;
       else if(sn.find("Background")!=string::npos&&!splitVH(fname)){
@@ -219,7 +232,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	vector<int> temp; temp.push_back(iSS[0]); temp.push_back(iaSS[0]);
 	MTmax = calcMTmax(temp,MET);
       }
-      float MTmax3l = calcMTmax(i3l,MET);
+      float MTmax3l = calcMTmax(i3l,MET,true);
 
       int SRSS[4]; bool selects3l[4];
       int SR3l[4];
@@ -244,13 +257,15 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       SR3l[3] = isAR3l(i3l,ia3l,true ,nj,nb,MET);
 
       //cout << __LINE__ << " " << nSS << " " << naSS << " " << n3l << " " << na3l << endl;
+      
       for(int i = 0; i<4; ++i) {
-	if(!selects3l[i]){
-	  if(vetophotonprocess(fname,isphotonSS))    { SRSS[i] = -1; }
-	}
-	else if(vetophotonprocess(fname,isphoton3l)){ SRSS[i] = -1; }
-	if(vetophotonprocess(fname,isphoton3l))     { SR3l[i] = -1; }
+        if(!selects3l[i]){
+          if(vetophotonprocess(fname,isphotonSS))    { SRSS[i] = -1; }
+        }
+        else if(vetophotonprocess(fname,isphoton3l)){ SRSS[i] = -1; }
+        if(vetophotonprocess(fname,isphoton3l))     { SR3l[i] = -1; }
       }
+      
       //cout << __LINE__ << " " << nSS << " " << naSS << " " << n3l << " " << na3l << endl;
       float FRSS(0.), FRSSerr(0.),  FR3l(0.),  FR3lerr(0.);
       //float FRSS2(0.),FRSSerr2(0.), FR3l2(0.), FR3lerr2(0.);//if using 2loose-not-tight
@@ -282,6 +297,45 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	noconeSF3lerr = noconeFR3lerr/pow(1.-noconeFR3l,2);
 	//cout << "3l " << SF3l << " " << SF3lerr << ", " << noconeSF3l << " " << noconeSF3lerr << endl;
       }
+
+      if(iaSS.size()>=1&&abs(lep_pdgId()[iaSS[0] ])==11){
+	if(SRSS[ 2]>=0) histos["FakeEstimationEvsMu_"        +sn]->Fill(0.,    weight*lepSFSS*SFSS);
+	if(SRSS[ 2]>=0) histos["ARyieldEvsMu_"               +sn]->Fill(0.,    weight*lepSFSS);
+	if(SRSS[ 2]>=0) histos["RawARyieldEvsMu_"            +sn]->Fill(0.,    1.);
+	if(SRSS[ 3]>=0) histos["PreselFakeEstimationEvsMu_"  +sn]->Fill(0.,    weight*lepSFSS*SFSS);
+	if(SRSS[ 3]>=0) histos["PreselARyieldEvsMu_"         +sn]->Fill(0.,    weight*lepSFSS);
+	if(SRSS[ 3]>=0) histos["RawPreselARyieldEvsMu_"      +sn]->Fill(0.,    1.);
+      }
+      if(iaSS.size()>=1&&abs(lep_pdgId()[iaSS[0] ])==13){
+	if(SRSS[ 2]>=0) histos["FakeEstimationEvsMu_"        +sn]->Fill(1.,    weight*lepSFSS*SFSS);
+	if(SRSS[ 2]>=0) histos["RawARyieldEvsMu_"            +sn]->Fill(1.,    1.);
+	if(SRSS[ 2]>=0) histos["ARyieldEvsMu_"               +sn]->Fill(1.,    weight*lepSFSS);
+	if(SRSS[ 3]>=0) histos["PreselFakeEstimationEvsMu_"  +sn]->Fill(1.,    weight*lepSFSS*SFSS);
+	if(SRSS[ 3]>=0) histos["PreselARyieldEvsMu_"         +sn]->Fill(1.,    weight*lepSFSS);
+	if(SRSS[ 3]>=0) histos["RawPreselARyieldEvsMu_"      +sn]->Fill(1.,    1.);
+      }
+      if(iSS.size()==2&&isfakeSS){
+	int id = -1;
+	for (unsigned int lepindex = 0;lepindex<iSS.size();++lepindex){
+	  if(lep_motherIdSS().at(iSS[lepindex]) > 0) continue;
+	  else if(lep_motherIdSS().at(iSS[lepindex]) == -3) continue;
+	  id = lep_pdgId()[iSS[lepindex] ];
+	  break;
+	}
+	if(abs(id)==11){
+	  if(SRSS[ 0]>=0) histos["SRyieldEvsMu_"         +sn]->Fill(0.,    weight*lepSFSS);
+	  if(SRSS[ 0]>=0) histos["RawSRyieldEvsMu_"      +sn]->Fill(0.,    1.);
+	  if(SRSS[ 1]>=0) histos["PreselSRyieldEvsMu_"   +sn]->Fill(0.,    weight*lepSFSS);
+	  if(SRSS[ 1]>=0) histos["RawPreselSRyieldEvsMu_"+sn]->Fill(0.,    1.);
+	}
+	if(abs(id)==13){
+	  if(SRSS[ 0]>=0) histos["SRyieldEvsMu_"         +sn]->Fill(1.,    weight*lepSFSS);
+	  if(SRSS[ 0]>=0) histos["RawSRyieldEvsMu_"      +sn]->Fill(1.,    1.);
+	  if(SRSS[ 1]>=0) histos["PreselSRyieldEvsMu_"   +sn]->Fill(1.,    weight*lepSFSS);
+	  if(SRSS[ 1]>=0) histos["RawPreselSRyieldEvsMu_"+sn]->Fill(1.,    1.);
+	}
+      }
+	 
       //cout << __LINE__ << " " << nSS << " " << naSS << " " << n3l << " " << na3l << endl;
       if(!(blindSR&&isData())){
 	fillSRhisto(histos, "SRyield",           sn, sn2, SRSS[ 0], SR3l[ 0], weight*lepSFSS, weight*lepSF3l);

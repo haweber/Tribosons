@@ -194,7 +194,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 	vector<int> temp; temp.push_back(iSS[0]); temp.push_back(iaSS[0]);
 	MTmax = calcMTmax(temp,MET);
       }
-      float MTmax3l = calcMTmax(i3l,MET);
+      float MTmax3l = calcMTmax(i3l,MET,true);
 
       int SRSS[6]; bool selects3l[6];
       int SR3l[6];

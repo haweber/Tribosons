@@ -34,6 +34,8 @@ struct myevt{
 
 #endif /* FUNCTION_H */
 
+#define MZ 91.1876
+
 int gentype_v2(unsigned lep1_index=0,unsigned lep2_index=1, int lep3_index=-1);
 float dR(LorentzVector vec1,LorentzVector vec2 );
 float dEta(LorentzVector vec1,LorentzVector vec2 );
@@ -49,7 +51,8 @@ float loadFR(float &FRSSerr,int index, TH2D *hMuFR, TH2D *hElFR, float muFRptmin
 float calcMjj(bool closestDR=true, int jec=0);//Mjj or MjjL
 float Detajj(int jec=0);
 bool getMjjAndDeta(float &Mjj, float &MjjL, float &Detajj, int jec=0);
-float calcMTmax(vector<int> lepindex, LorentzVector MET);
+float calcMTmax(vector<int> lepindex, LorentzVector MET, bool compareSSpairs=false);
+float calcMTmax(int index1, int index2, LorentzVector MET);
 bool passofflineTriggers(vector<int> tightlep, vector<int> looselep={});
 bool passonlineTriggers(vector<int> tightlep, vector<int> looselep={});//I'll duplicate and goodrun selection by hand - I think this way it is easier
 bool passFilters();

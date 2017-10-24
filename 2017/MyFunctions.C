@@ -30,16 +30,16 @@ int gentype_v2(unsigned lep1_index,unsigned lep2_index, int lep3_index){
       int ilep2 =   lep_genPart_index().at(lep2_index);
       bool lep1_chargeflip  =genPart_charge().at(ilep1)!= lep_charge().at(lep1_index);
       bool lep2_chargeflip  =genPart_charge().at(ilep2)!= lep_charge().at(lep2_index);
-      if (!lep1_chargeflip&&!lep2_chargeflip&&nW==2) return 0; // true SS
-      else if (!lep1_chargeflip&&!lep2_chargeflip) isSS = true; // true SS - but could be still lost lepton WZ
-      if (lep1_chargeflip||lep2_chargeflip)   ischargeflip = true; // charge flip
+      if (     !lep1_chargeflip&&!lep2_chargeflip&&nW==2) return 0; // true SS
+      else if (!lep1_chargeflip&&!lep2_chargeflip)        isSS = true; // true SS - but could be still lost lepton WZ
+      if (      lep1_chargeflip|| lep2_chargeflip)        ischargeflip = true; // charge flip
     }
     
     if(ngenlep>2 || reallepindex.size()>2 || (nW>0 && nZ>0)) return 3; // lostlep
-    if((ngenlep<2 ||!lep1_real||!lep2_real)&&    jetfake) return 4; // jetfake - if double fake with one jet fake and one gamma fake call it jet fake
-    if((ngenlep<2 ||!lep1_real||!lep2_real)&&  gammafake) return 5; // gammafake
-    if((ngenlep<2 ||!lep1_real||!lep2_real)&& !gammafake) return 4; // call all without gamma fake jetfake - safety cut
-    if(isSS) return 0;
+    if((ngenlep<2 ||!lep1_real||!lep2_real)&&       jetfake) return 4; // jetfake - if double fake with one jet fake and one gamma fake call it jet fake
+    if((ngenlep<2 ||!lep1_real||!lep2_real)&&     gammafake) return 5; // gammafake
+    if((ngenlep<2 ||!lep1_real||!lep2_real)&&    !gammafake) return 4; // call all without gamma fake jetfake - safety cut
+    if(isSS)         return 0;
     if(ischargeflip) return 2;
     
     cout << "This event was not classified - 2 lepton event - v2" << endl;
@@ -55,16 +55,16 @@ int gentype_v2(unsigned lep1_index,unsigned lep2_index, int lep3_index){
       bool lep1_chargeflip  =genPart_charge().at(ilep1)!= lep_charge().at(lep1_index);
       bool lep2_chargeflip  =genPart_charge().at(ilep2)!= lep_charge().at(lep2_index);
       bool lep3_chargeflip  =genPart_charge().at(ilep3)!= lep_charge().at(lep3_index);
-      if (!lep1_chargeflip&&!lep2_chargeflip&&!lep3_chargeflip&&nW==3) return 0; // true WWW
-      else if (!lep1_chargeflip&&!lep2_chargeflip&&!lep3_chargeflip) isthreelep = true; // true 3l, but could be lost lepton ZZ
-      if (lep1_chargeflip||lep2_chargeflip||lep3_chargeflip)   ischargeflip = true; // charge flip
+      if (     !lep1_chargeflip&&!lep2_chargeflip&&!lep3_chargeflip&&nW==3) return 0; // true WWW
+      else if (!lep1_chargeflip&&!lep2_chargeflip&&!lep3_chargeflip)        isthreelep = true; // true 3l, but could be lost lepton ZZ
+      if (      lep1_chargeflip|| lep2_chargeflip|| lep3_chargeflip)        ischargeflip = true; // charge flip
     }
     if(ngenlep>3 || reallepindex.size()>3 || (nW>=2 && nZ>=1) || (nZ>=3)) return 3; // lostlep (2 lep from W and 2 from Z, or 4 from Z)
     //there is the case of having WZZ with two lost leptons --> ngenlep>3 - correctly put has lostlep
-    if((ngenlep<3 ||!lep1_real||!lep2_real||!lep3_real)&&    jetfake) return 4; // jetfake
-    if((ngenlep<3 ||!lep1_real||!lep2_real||!lep3_real)&&  gammafake) return 5; // gammafake
-    if((ngenlep<3 ||!lep1_real||!lep2_real||!lep3_real)&& !gammafake) return 4; // jetfake
-    if(isthreelep) return 1;
+    if((ngenlep<3 ||!lep1_real||!lep2_real||!lep3_real)&&        jetfake) return 4; // jetfake
+    if((ngenlep<3 ||!lep1_real||!lep2_real||!lep3_real)&&      gammafake) return 5; // gammafake
+    if((ngenlep<3 ||!lep1_real||!lep2_real||!lep3_real)&&     !gammafake) return 4; // jetfake
+    if(isthreelep)   return 1;
     if(ischargeflip) return 2;
     
     cout << "This event was not classified - 3 lepton event - v2" << endl;
@@ -75,7 +75,7 @@ int gentype_v2(unsigned lep1_index,unsigned lep2_index, int lep3_index){
 
 
 float dR(LorentzVector vec1,LorentzVector vec2 ){
-  float dphi = std::min(::fabs(vec1.Phi() - vec2.Phi()), 2 * M_PI - fabs(vec1.Phi() - vec2.Phi()));
+  float dphi = std::min(float(fabs(vec1.Phi() - vec2.Phi())), float(2 * M_PI - fabs(vec1.Phi() - vec2.Phi())) );
   float deta = vec1.Eta() - vec2.Eta();
   return sqrt(dphi*dphi + deta*deta);
 }
@@ -85,7 +85,7 @@ float dEta(LorentzVector vec1,LorentzVector vec2 ){
 }
 
 float dPhi(LorentzVector vec1,LorentzVector vec2 ){
-  return fabs(std::min(::fabs(vec1.Phi() - vec2.Phi()), 2 * M_PI - fabs(vec1.Phi() - vec2.Phi())));
+  return fabs(std::min(float(fabs(vec1.Phi() - vec2.Phi())), float(2 * M_PI - fabs(vec1.Phi() - vec2.Phi())) ));
 }
 
 float deltaPhi(float phi1,float phi2 ){
@@ -97,11 +97,10 @@ float mT(LorentzVector p4, LorentzVector met){
   float phi2 = met.Phi();
   float Et1  = p4.Et();
   float Et2  = met.Et();
-
   return sqrt(2*Et1*Et2*(1.0 - cos(phi1-phi2)));
 }
 bool sortMSFOS(float M1, float M2){
-  return fabs(M1-90.)<fabs(M2-90.);
+  return fabs(M1-MZ)<fabs(M2-MZ);
 }
 
 int numJ(float jetpt, float jeteta, float csv, int jec){
@@ -109,25 +108,25 @@ int numJ(float jetpt, float jeteta, float csv, int jec){
   if(jec==1){
     for(unsigned int n = 0; n<jets_up_csv().size();++n){
       if(fabs(jets_up_p4()[n].Eta())>jeteta) continue;
-      if(jets_up_p4()[n].Pt()<jetpt)         continue;
-      if(csv<0) ++num;
+      if(     jets_up_p4()[n].Pt()  <jetpt)  continue;
+      if(csv<0)                     ++num;
       else if(jets_up_csv()[n]>csv) ++num;
     }
   }
   else if(jec==(-1)){
     for(unsigned int n = 0; n<jets_dn_csv().size();++n){
       if(fabs(jets_dn_p4()[n].Eta())>jeteta) continue;
-      if(jets_dn_p4()[n].Pt()<jetpt)         continue;
-      if(csv<0) ++num;
+      if(     jets_dn_p4()[n].Pt()  <jetpt)  continue;
+      if(csv<0)                     ++num;
       else if(jets_dn_csv()[n]>csv) ++num;
     }
   }
   else{ 
     for(unsigned int n = 0; n<jets_csv().size();++n){
-      if(fabs(jets_p4()[n].Eta())>jeteta) continue;
-      if(jets_p4()[n].Pt()<jetpt)         continue;
-      if(csv<0) ++num;
-      else if(jets_csv()[n]>csv) ++num;
+      if(fabs(   jets_p4()[n].Eta())>jeteta) continue;
+      if(        jets_p4()[n].Pt()  <jetpt)  continue;
+      if(csv<0)                     ++num;
+      else if(   jets_csv()[n]>csv) ++num;
     }
   }
   return num;
@@ -139,23 +138,23 @@ bool getalljetnumbers(int &nj, int &nj30, int &nb, int jec){
   int numb  = 0;
   if(jec==1){
     for(unsigned int n = 0; n<jets_up_csv().size();++n){
-      if(jets_up_p4()[n].Pt()>=20&&fabs(jets_up_p4()[n].Eta())<=5) ++num;
-      if(jets_up_p4()[n].Pt()>=30&&fabs(jets_up_p4()[n].Eta())<=2.5) ++num30;
-      if(jets_up_csv()[n]>=0.5426&&jets_up_p4()[n].Pt()>=20&&fabs(jets_up_p4()[n].Eta())<=2.4) ++numb;
+      if(jets_up_p4()[n].Pt()>=30&&fabs(jets_up_p4()[n].Eta())<=5)                             ++num;
+      if(jets_up_p4()[n].Pt()>=30&&fabs(jets_up_p4()[n].Eta())<=2.5)                           ++num30;
+      if(jets_up_p4()[n].Pt()>=20&&fabs(jets_up_p4()[n].Eta())<=2.4&&jets_up_csv()[n]>=0.5426) ++numb;
     }
   }
   else if(jec==(-1)){
     for(unsigned int n = 0; n<jets_dn_csv().size();++n){
-      if(jets_dn_p4()[n].Pt()>=20&&fabs(jets_dn_p4()[n].Eta())<=5) ++num;
-      if(jets_dn_p4()[n].Pt()>=30&&fabs(jets_dn_p4()[n].Eta())<=2.5) ++num30;
-      if(jets_dn_csv()[n]>=0.5426&&jets_dn_p4()[n].Pt()>=20&&fabs(jets_dn_p4()[n].Eta())<=2.4) ++numb;
+      if(jets_dn_p4()[n].Pt()>=30&&fabs(jets_dn_p4()[n].Eta())<=5)                             ++num;
+      if(jets_dn_p4()[n].Pt()>=30&&fabs(jets_dn_p4()[n].Eta())<=2.5)                           ++num30;
+      if(jets_dn_p4()[n].Pt()>=20&&fabs(jets_dn_p4()[n].Eta())<=2.4&&jets_dn_csv()[n]>=0.5426) ++numb;
     }
   }
   else{ 
     for(unsigned int n = 0; n<jets_csv().size();++n){
-      if(jets_p4()[n].Pt()>=20&&fabs(jets_p4()[n].Eta())<=5) ++num;
-      if(jets_p4()[n].Pt()>=30&&fabs(jets_p4()[n].Eta())<=2.5) ++num30;
-      if(jets_csv()[n]>=0.5426&&jets_p4()[n].Pt()>=20&&fabs(jets_p4()[n].Eta())<=2.4) ++numb;
+      if(   jets_p4()[n].Pt()>=30&&fabs(   jets_p4()[n].Eta())<=5)                             ++num;
+      if(   jets_p4()[n].Pt()>=30&&fabs(   jets_p4()[n].Eta())<=2.5)                           ++num30;
+      if(   jets_p4()[n].Pt()>=20&&fabs(   jets_p4()[n].Eta())<=2.4&&   jets_csv()[n]>=0.5426) ++numb;
     }
   }
   nj   = num;
@@ -177,41 +176,41 @@ bool getleptonindices(vector<int> &iSS, vector<int> &i3l, vector<int> &iaSS, vec
     bool isSS    = false; bool is3l    = false;
     bool isaSS   = false; bool isa3l   = false;
     //tight ID
-    if(lep_pass_VVV_cutbased_tight_noiso()[i]&&fabs(lep_p4()[i].Eta())<2.4&&fabs(lep_ip3d()[i])<0.015&&lep_isTriggerSafe_v2()[i]) {
+    if(lep_pass_VVV_cutbased_tight_noiso()[i]&&fabs(lep_p4()[i].Eta())<2.4&&fabs(lep_ip3d()[i])<0.015&&lep_isTriggerSafe_v1()[i]) {
       if(abs(lep_pdgId()[i])==11&&lep_lostHits()[i]==0&&lep_tightCharge()[i]==2){
 	if(fabs(lep_etaSC()[i])<=1.479&&lep_relIso03EAv2()[i]<0.0588){
-	  if(lep_p4()      [i ].Pt()>20) { i3l  .push_back(i); is3l   = true; }
-	  if(lep_p4()      [i ].Pt()>30) { iSS  .push_back(i); isSS   = true; }
+	  if(lep_p4()[i].Pt()>20) { i3l.push_back(i); is3l = true; }
+	  if(lep_p4()[i].Pt()>30) { iSS.push_back(i); isSS = true; }
 	} else if(fabs(lep_etaSC()[i]) >1.479&&lep_relIso03EAv2()[i]<0.0571){
-	  if(lep_p4()      [i ].Pt()>20) { i3l  .push_back(i); is3l   = true; }
-	  if(lep_p4()      [i ].Pt()>30) { iSS  .push_back(i); isSS   = true; }
+	  if(lep_p4()[i].Pt()>20) { i3l.push_back(i); is3l = true; }
+	  if(lep_p4()[i].Pt()>30) { iSS.push_back(i); isSS = true; }
 	}
-      } else if(abs(lep_pdgId()[i])==13&&lep_relIso03EAv2()[i]<0.06&&lep_isTriggerSafe_v2()[i]){
-	if(lep_p4()      [i ].Pt()>20) { i3l  .push_back(i); is3l   = true; }
-	if(lep_p4()      [i ].Pt()>30) { iSS  .push_back(i); isSS   = true; }
+      } else if(abs(lep_pdgId()[i])==13&&lep_relIso03EAv2()[i]<0.06){
+	if(  lep_p4()[i].Pt()>20) { i3l.push_back(i); is3l = true; }
+	if(  lep_p4()[i].Pt()>30) { iSS.push_back(i); isSS = true; }
       }
     }
     //loose ID
-    if(lep_pass_VVV_cutbased_fo_noiso()[i]&&fabs(lep_p4()[i].Eta())<2.4&&fabs(lep_ip3d()[i])<0.015&&lep_isTriggerSafe_v1()[i]) {
+    if(lep_pass_VVV_cutbased_fo_noiso()[i]   &&fabs(lep_p4()[i].Eta())<2.4&&fabs(lep_ip3d()[i])<0.015&&lep_isTriggerSafe_v1()[i]) {
       if(abs(lep_pdgId()[i])==11&&lep_lostHits()[i]==0&&lep_tightCharge()[i]==2){
 	if(fabs(lep_etaSC()[i])<=1.479&&lep_relIso03EAv2()[i]<0.2){
-	  if(!is3l&&lep_p4()      [i ].Pt()>20) { ia3l  .push_back(i); isa3l   = true; }
-	  if(!isSS&&lep_p4()      [i ].Pt()>30) { iaSS  .push_back(i); isaSS   = true; }
+	  if(!is3l&&lep_p4()[i].Pt()>20) { ia3l.push_back(i); isa3l = true; }
+	  if(!isSS&&lep_p4()[i].Pt()>30) { iaSS.push_back(i); isaSS = true; }
 	} else if(fabs(lep_etaSC()[i]) >1.479&&lep_relIso03EAv2()[i]<0.2){
-	  if(!is3l&&lep_p4()      [i ].Pt()>20) { ia3l  .push_back(i); isa3l   = true; }
-	  if(!isSS&&lep_p4()      [i ].Pt()>30) { iaSS  .push_back(i); isaSS   = true; }
+	  if(!is3l&&lep_p4()[i].Pt()>20) { ia3l.push_back(i); isa3l = true; }
+	  if(!isSS&&lep_p4()[i].Pt()>30) { iaSS.push_back(i); isaSS = true; }
 	}
-      } else if(abs(lep_pdgId()[i])==13&&lep_relIso03EAv2()[i]<0.2&&lep_isTriggerSafe_v1()[i]){
-	if(!is3l&&lep_p4()      [i ].Pt()>20) { ia3l  .push_back(i); isa3l   = true; }
-	if(!isSS&&lep_p4()      [i ].Pt()>30) { iaSS  .push_back(i); isaSS   = true; }
+      } else if(abs(lep_pdgId()[i])==13&&lep_relIso03EAv2()[i]<0.4){
+	if(  !is3l&&lep_p4()[i].Pt()>20) { ia3l.push_back(i); isa3l = true; }
+	if(  !isSS&&lep_p4()[i].Pt()>30) { iaSS.push_back(i); isaSS = true; }
       }
     }
     //vetoID
-    if(lep_pass_VVV_cutbased_veto_noiso()[i]&&fabs(lep_p4()[i].Eta())<2.4&&lep_relIso03EAv2()[i]<=0.4) {
-      if(!isSS  &&          lep_p4()      [i ].Pt()>10) vSS  .push_back(i);
-      if(!is3l  &&          lep_p4()      [i ].Pt()>10) v3l  .push_back(i);
-      if(!isSS  && !isaSS &&lep_p4()      [i ].Pt()>10) vaSS .push_back(i);
-      if(!is3l  && !isa3l &&lep_p4()      [i ].Pt()>10) va3l .push_back(i);
+    if(lep_pass_VVV_cutbased_veto_noiso()[i] &&fabs(lep_p4()[i].Eta())<2.4&&lep_relIso03EAv2()[i]<=0.4) {
+      if(!isSS &&          lep_p4()[i].Pt()>10) vSS  .push_back(i);
+      if(!is3l &&          lep_p4()[i].Pt()>10) v3l  .push_back(i);
+      if(!isSS && !isaSS &&lep_p4()[i].Pt()>10) vaSS .push_back(i);
+      if(!is3l && !isa3l &&lep_p4()[i].Pt()>10) va3l .push_back(i);
     }
   }
   return true;
@@ -220,11 +219,11 @@ bool getleptonindices(vector<int> &iSS, vector<int> &i3l, vector<int> &iaSS, vec
 float coneCorrPt(int lepi){
   float coneptcorr = 0;
   float relIso = lep_relIso03EAv2().at(lepi);
-  if ( abs(lep_pdgId().at(lepi)) == 11 ) {
-    if ( fabs(lep_eta().at(lepi)) <= 1.479 ) coneptcorr = std::max( 0., relIso - 0.0588 );
-    else                                     coneptcorr = std::max( 0., relIso - 0.0571 );
+  if(   abs(lep_pdgId().at(lepi)) == 11) {
+    if(fabs(lep_eta().at(lepi)) <= 1.479) coneptcorr = std::max( 0., relIso - 0.0588 );
+    else                                  coneptcorr = std::max( 0., relIso - 0.0571 );
   }
-  if ( abs(lep_pdgId().at(lepi)) == 13 )     coneptcorr = std::max( 0., relIso - 0.06   );
+  if(   abs(lep_pdgId().at(lepi)) == 13)  coneptcorr = std::max( 0., relIso - 0.06   );
 
   return coneptcorr;
 }
@@ -239,7 +238,7 @@ float loadFR(float &FRSSerr,int index, TH2D *hMuFR, TH2D *hElFR, float muFRptmin
   float binx,biny;
   if(abs(lep_pdgId()[index])==11){
     if(!(hElFR==0)){
-      if(elFRetamin<0) biny = std::max(elFRetamin,std::min(elFRetamax,lep_etaSC()[index]));
+      if(elFRetamin<0) biny = std::max(elFRetamin,std::min(elFRetamax,     lep_etaSC()[index]) );
       else             biny = std::max(elFRetamin,std::min(elFRetamax,fabs(lep_etaSC()[index])));
       binx                  = std::max(elFRptmin, std::min(elFRptmax, correction*lep_p4()[index].Pt()));
       bin   = hElFR->FindBin(binx, biny);
@@ -249,7 +248,7 @@ float loadFR(float &FRSSerr,int index, TH2D *hMuFR, TH2D *hElFR, float muFRptmin
   }
   if(abs(lep_pdgId()[index])==13){
     if(!(hMuFR==0)){
-      if(muFRetamin<0) biny = std::max(muFRetamin,std::min(muFRetamax,lep_p4()[index].Eta()));
+      if(muFRetamin<0) biny = std::max(muFRetamin,std::min(muFRetamax,     lep_p4()[index].Eta()) );
       else             biny = std::max(muFRetamin,std::min(muFRetamax,fabs(lep_p4()[index].Eta())));
       binx                  = std::max(muFRptmin, std::min(muFRptmax, correction*lep_p4()[index].Pt()));
       bin   = hMuFR->FindBin(binx, biny);
@@ -268,12 +267,12 @@ float calcMjj(bool closestDR, int jec){
   if(jec==1){
     for(unsigned int j1 = 0; j1<jets_up_p4().size();++j1){
       if(fabs(jets_up_p4()[j1].Eta())>2.5) continue;
-      if(jets_up_p4()[j1].Pt()<30) continue;
+      if(     jets_up_p4()[j1].Pt()  <30.) continue;
       for(unsigned int j2 = j1+1; j2<jets_up_p4().size();++j2){
 	if(fabs(jets_up_p4()[j2].Eta())>2.5) continue;
-	if(jets_up_p4()[j2].Pt()<30) continue;
+	if(     jets_up_p4()[j2].Pt()  <30.) continue;
 	if(!closestDR) return  (jets_up_p4()[j1]+jets_up_p4()[j2]).M();
-	if(dR(jets_up_p4()[j1], jets_up_p4()[j2])<minDR){
+	if(       dR(jets_up_p4()[j1], jets_up_p4()[j2])<minDR){
 	  minDR = dR(jets_up_p4()[j1], jets_up_p4()[j2]);
 	  jDR1 = j1; jDR2 = j2;
 	}
@@ -284,12 +283,12 @@ float calcMjj(bool closestDR, int jec){
   else if(jec==(-1)){
     for(unsigned int j1 = 0; j1<jets_dn_p4().size();++j1){
       if(fabs(jets_dn_p4()[j1].Eta())>2.5) continue;
-      if(jets_dn_p4()[j1].Pt()<30) continue;
+      if(     jets_dn_p4()[j1].Pt()  <30.) continue;
       for(unsigned int j2 = j1+1; j2<jets_dn_p4().size();++j2){
 	if(fabs(jets_dn_p4()[j2].Eta())>2.5) continue;
-	if(jets_dn_p4()[j2].Pt()<30) continue;
+	if(     jets_dn_p4()[j2].Pt()  <30.) continue;
 	if(!closestDR) return  (jets_dn_p4()[j1]+jets_dn_p4()[j2]).M();
-	if(dR(jets_dn_p4()[j1], jets_dn_p4()[j2])<minDR){
+	if(dR(       jets_dn_p4()[j1], jets_dn_p4()[j2])<minDR){
 	  minDR = dR(jets_dn_p4()[j1], jets_dn_p4()[j2]);
 	  jDR1 = j1; jDR2 = j2;
 	}
@@ -300,12 +299,12 @@ float calcMjj(bool closestDR, int jec){
   else {
     for(unsigned int j1 = 0; j1<jets_p4().size();++j1){
       if(fabs(jets_p4()[j1].Eta())>2.5) continue;
-      if(jets_p4()[j1].Pt()<30) continue;
+      if(     jets_p4()[j1].Pt()  <30.) continue;
       for(unsigned int j2 = j1+1; j2<jets_p4().size();++j2){
 	if(fabs(jets_p4()[j2].Eta())>2.5) continue;
-	if(jets_p4()[j2].Pt()<30) continue;
+	if(     jets_p4()[j2].Pt()  <30.) continue;
 	if(!closestDR) return  (jets_p4()[j1]+jets_p4()[j2]).M();
-	if(dR(jets_p4()[j1], jets_p4()[j2])<minDR){
+	if(dR(       jets_p4()[j1], jets_p4()[j2])<minDR){
 	  minDR = dR(jets_p4()[j1], jets_p4()[j2]);
 	  jDR1 = j1; jDR2 = j2;
 	}
@@ -320,10 +319,10 @@ float Detajj(int jec){
   if(jec==1){
     for(unsigned int j1 = 0; j1<jets_up_p4().size();++j1){
       if(fabs(jets_up_p4()[j1].Eta())>2.5) continue;
-      if(jets_up_p4()[j1].Pt()<30) continue;
+      if(     jets_up_p4()[j1].Pt()  <30.) continue;
       for(unsigned int j2 = j1+1; j2<jets_up_p4().size();++j2){
 	if(fabs(jets_up_p4()[j2].Eta())>2.5) continue;
-	if(jets_up_p4()[j2].Pt()<30) continue;
+	if(     jets_up_p4()[j2].Pt()  <30.) continue;
 	return dEta(jets_up_p4()[j1],jets_up_p4()[j2]);
       }
     }
@@ -331,10 +330,10 @@ float Detajj(int jec){
   else if(jec==(-1)){
     for(unsigned int j1 = 0; j1<jets_dn_p4().size();++j1){
       if(fabs(jets_dn_p4()[j1].Eta())>2.5) continue;
-      if(jets_dn_p4()[j1].Pt()<30) continue;
+      if(     jets_dn_p4()[j1].Pt()  <30.) continue;
       for(unsigned int j2 = j1+1; j2<jets_dn_p4().size();++j2){
 	if(fabs(jets_dn_p4()[j2].Eta())>2.5) continue;
-	if(jets_dn_p4()[j2].Pt()<30) continue;
+	if(     jets_dn_p4()[j2].Pt()  <30.) continue;
 	return dEta(jets_dn_p4()[j1],jets_dn_p4()[j2]);
       }
     }
@@ -342,10 +341,10 @@ float Detajj(int jec){
   else {
     for(unsigned int j1 = 0; j1<jets_p4().size();++j1){
       if(fabs(jets_p4()[j1].Eta())>2.5) continue;
-      if(jets_p4()[j1].Pt()<30) continue;
+      if(     jets_p4()[j1].Pt()  <30.) continue;
       for(unsigned int j2 = j1+1; j2<jets_p4().size();++j2){
 	if(fabs(jets_p4()[j2].Eta())>2.5) continue;
-	if(jets_p4()[j2].Pt()<30) continue;
+	if(     jets_p4()[j2].Pt()  <30.) continue;
 	return dEta(jets_p4()[j1],jets_p4()[j2]);
       }
     }
@@ -362,15 +361,15 @@ bool getMjjAndDeta(float &Mjj, float &MjjL, float &Detajj, int jec){//xxx
   if(jec==1){
     for(unsigned int j1 = 0; j1<jets_up_p4().size();++j1){
       if(fabs(jets_up_p4()[j1].Eta())>2.5) continue;
-      if(jets_up_p4()[j1].Pt()<30) continue;
+      if(     jets_up_p4()[j1].Pt()  <30.) continue;
       for(unsigned int j2 = j1+1; j2<jets_up_p4().size();++j2){
 	if(fabs(jets_up_p4()[j2].Eta())>2.5) continue;
-	if(jets_up_p4()[j2].Pt()<30) continue;
+	if(     jets_up_p4()[j2].Pt()  <30.) continue;
 	if(MassjjL<0) {
-	  MassjjL    = (jets_up_p4()[j1]+jets_up_p4()[j2]).M();
+	  MassjjL    =     (jets_up_p4()[j1]+jets_up_p4()[j2]).M();
 	  Deltaetajj = dEta(jets_up_p4()[j1],jets_up_p4()[j2]);
 	}
-	if(dR(jets_up_p4()[j1], jets_up_p4()[j2])<minDR){
+	if(       dR(jets_up_p4()[j1], jets_up_p4()[j2])<minDR){
 	  minDR = dR(jets_up_p4()[j1], jets_up_p4()[j2]);
 	  jDR1 = j1; jDR2 = j2;
 	}
@@ -381,15 +380,15 @@ bool getMjjAndDeta(float &Mjj, float &MjjL, float &Detajj, int jec){//xxx
   else if(jec==(-1)){
     for(unsigned int j1 = 0; j1<jets_dn_p4().size();++j1){
       if(fabs(jets_dn_p4()[j1].Eta())>2.5) continue;
-      if(jets_dn_p4()[j1].Pt()<30) continue;
+      if(     jets_dn_p4()[j1].Pt()  <30.) continue;
       for(unsigned int j2 = j1+1; j2<jets_dn_p4().size();++j2){
 	if(fabs(jets_dn_p4()[j2].Eta())>2.5) continue;
-	if(jets_dn_p4()[j2].Pt()<30) continue;
+	if(     jets_dn_p4()[j2].Pt()  <30.) continue;
 	if(MassjjL<0) {
-	  MassjjL    = (jets_dn_p4()[j1]+jets_dn_p4()[j2]).M();
+	  MassjjL    =     (jets_dn_p4()[j1]+jets_dn_p4()[j2]).M();
 	  Deltaetajj = dEta(jets_dn_p4()[j1],jets_dn_p4()[j2]);
 	}
-	if(dR(jets_dn_p4()[j1], jets_dn_p4()[j2])<minDR){
+	if(       dR(jets_dn_p4()[j1], jets_dn_p4()[j2])<minDR){
 	  minDR = dR(jets_dn_p4()[j1], jets_dn_p4()[j2]);
 	  jDR1 = j1; jDR2 = j2;
 	}
@@ -400,15 +399,15 @@ bool getMjjAndDeta(float &Mjj, float &MjjL, float &Detajj, int jec){//xxx
   else {
     for(unsigned int j1 = 0; j1<jets_p4().size();++j1){
       if(fabs(jets_p4()[j1].Eta())>2.5) continue;
-      if(jets_p4()[j1].Pt()<30) continue;
+      if(     jets_p4()[j1].Pt()  <30.) continue;
       for(unsigned int j2 = j1+1; j2<jets_p4().size();++j2){
 	if(fabs(jets_p4()[j2].Eta())>2.5) continue;
-	if(jets_p4()[j2].Pt()<30) continue;
+	if(     jets_p4()[j2].Pt()  <30.) continue;
 	if(MassjjL<0) {
-	  MassjjL    = (jets_p4()[j1]+jets_p4()[j2]).M();
+	  MassjjL    =     (jets_p4()[j1]+jets_p4()[j2]).M();
 	  Deltaetajj = dEta(jets_p4()[j1],jets_p4()[j2]);
 	}
-	if(dR(jets_p4()[j1], jets_p4()[j2])<minDR){
+	if(       dR(jets_p4()[j1], jets_p4()[j2])<minDR){
 	  minDR = dR(jets_p4()[j1], jets_p4()[j2]);
 	  jDR1 = j1; jDR2 = j2;
 	}
@@ -422,14 +421,44 @@ bool getMjjAndDeta(float &Mjj, float &MjjL, float &Detajj, int jec){//xxx
   return true;
 }
 
-float calcMTmax(vector<int> lepindex, LorentzVector MET){
+float calcMTmax(vector<int> lepindex, LorentzVector MET, bool compareSSpairs){
   float MT = -1;
+  if(!compareSSpairs){
+    for(unsigned int n = 0; n<lepindex.size(); ++n){
+      float myMT = mT(lep_p4()[lepindex[n] ],MET);
+      if(MT<myMT) MT = myMT;
+    }
+    return MT;
+  }
+  float MT1(-1),MT2(-1);
+  int ns1(0), ns2(0);
   for(unsigned int n = 0; n<lepindex.size(); ++n){
     float myMT = mT(lep_p4()[lepindex[n] ],MET);
-    if(MT<myMT) MT = myMT;
+    if((lep_pdgId()[lepindex[n] ])>0){
+      if(MT1<myMT) MT1 = myMT;
+      ++ns1;
+    }
+    else {
+      if(MT2<myMT) MT2 = myMT;
+      ++ns2;
+    }
   }
-  return MT;
+  if(ns1>ns2) return MT1;
+  else        return MT2;
+
 }
+float calcMTmax(int index1, int index2, LorentzVector MET){
+  if(index1==index2)               return -1.;
+  if(index1<0)                     return -1.;
+  if(index1>=(int)lep_p4().size()) return -1.;
+  if(index2>=(int)lep_p4().size()) return -1.;
+  float MT1         = mT(lep_p4()[index1],MET);
+  float MT2 = -1.;
+  if(index2>0)  MT2 = mT(lep_p4()[index1],MET);
+  if(MT1>MT2)  return MT1;
+  return MT2;
+}
+
 
 bool passofflineTriggers(vector<int> tightlep, vector<int> looselep){
   bool passofflineforTrigger = false;
@@ -495,14 +524,14 @@ bool passonlineTriggers(vector<int> tightlep, vector<int> looselep){
 
 bool passFilters(){
   if(!isData()) return true;//don't apply filters on simulation
-  if (!Flag_EcalDeadCellTriggerPrimitiveFilter()      ) return false;
-  if (!Flag_badChargedCandidateFilter         ()      ) return false;
-  if (!Flag_HBHENoiseFilter                   ()      ) return false;
-  if (!Flag_HBHEIsoNoiseFilter                ()      ) return false;
-  if (!Flag_goodVertices                      ()      ) return false;
-  if (!Flag_eeBadScFilter                     ()      ) return false;
-  if (!Flag_globalTightHalo2016               ()      ) return false;
-  if (!Flag_badMuonFilter                     ()      ) return false;
+  if (!Flag_EcalDeadCellTriggerPrimitiveFilter() ) return false;
+  if (!Flag_badChargedCandidateFilter         () ) return false;
+  if (!Flag_HBHENoiseFilter                   () ) return false;
+  if (!Flag_HBHEIsoNoiseFilter                () ) return false;
+  if (!Flag_goodVertices                      () ) return false;
+  if (!Flag_eeBadScFilter                     () ) return false;
+  if (!Flag_globalTightHalo2016               () ) return false;
+  if (!Flag_badMuonFilter                     () ) return false;
   return true;
 }
 
@@ -512,7 +541,7 @@ bool splitVH(string filename){
   bool isWnotFromH = false;
   for(unsigned int i = 0; i<genPart_pdgId().size();++i){
     if(abs(genPart_pdgId()[i])!=24) continue;
-    if(genPart_status()[i]!=22)     continue;
+    if(    genPart_status()[i]!=22) continue;
     if(abs(genPart_motherId()[i])==25) { isHtoWW     = true; }
     if(abs(genPart_motherId()[i])!=2)  { isWnotFromH = true; }
     if(isHtoWW&&isWnotFromH) break;
@@ -526,7 +555,7 @@ string process(string filename, bool SS, vector<int> tightlep, vector<int> loose
   if(filename.find("www_incl_amcnlo_")!=string::npos) return "WWWv2";  //be careful not to double-count (for Hannsjoerg only)
   if(filename.find("data_")           !=string::npos) return "Data";  //be careful not to double-count (for Hannsjoerg only)
   if(SS){
-    if((tightlep.size()+looselep.size())<2) return "not2l";
+    if((tightlep.size()+looselep.size())<2)           return "not2l";
     int l1, l2;
     if(tightlep.size()>=2)      { l1 = tightlep[0]; l2 = tightlep[1]; }
     else if(tightlep.size()==1) { l1 = tightlep[0]; l2 = looselep[0]; }
@@ -559,7 +588,7 @@ string process(string filename, bool SS, vector<int> tightlep, vector<int> loose
 bool vetophotonprocess(string filename, bool process){
   //if((filename.find("wjets_")!=string::npos||filename.find("dy_")!=string::npos||filename.find("ttbar_")!=string::npos||filename.find("ww_")!=string::npos||filename.find("wz_")!=string::npos)&&(process==5)) return true;
   //if((filename.find("wgjets_")!=string::npos||filename.find("wgstar_")!=string::npos||filename.find("zgamma_")!=string::npos||filename.find("ttg_")!=string::npos||filename.find("wwg_")!=string::npos ||filename.find("wzg_")!=string::npos)&&(process!=5)) return true;
-  if((filename.find("wjets_")!=string::npos||filename.find("dy_")!=string::npos||filename.find("ttbar_")!=string::npos||filename.find("ww_")!=string::npos||filename.find("wz_")!=string::npos)&&(process)) return true;
+  if((filename.find("wjets_" )!=string::npos||filename.find("dy_"    )!=string::npos||filename.find("ttbar_" )!=string::npos||filename.find("ww_" )!=string::npos||filename.find("wz_" )!=string::npos)&&(process)) return true;
   if((filename.find("wgjets_")!=string::npos||filename.find("wgstar_")!=string::npos||filename.find("zgamma_")!=string::npos||filename.find("ttg_")!=string::npos||filename.find("wwg_")!=string::npos ||filename.find("wzg_")!=string::npos)&&(!process)) return true;
   return false;
 }
@@ -569,8 +598,8 @@ bool passJetSSstate(bool preselect, int nj, int nb, float Mjj, float MjjL, float
   int numb = nb;
   int x;
   if(nb<0||nj<0) getalljetnumbers(x,numj,numb, jec);
-  if(numj<2) return false;
-  if(numb>0) return false;
+  if(numj<2)    return false;
+  if(numb>0)    return false;
   if(preselect) return true;
   float Massjj  = Mjj;
   float MassjjL = MjjL;
@@ -585,12 +614,12 @@ bool passJetSSstate(bool preselect, int nj, int nb, float Mjj, float MjjL, float
       
 int isSRSS(vector<int> tightlep, vector<int> vetolep,  bool preselect, float maxMT, int nj, int nb, float Mjj, float MjjL, float Detajj, LorentzVector MET, int jec){
   if(!passJetSSstate(preselect, nj, nb, Mjj, MjjL, Detajj, false, jec)) return -1;
-  if(tightlep.size()!=2) return -1;
-  if(vetolep.size()!=0)  return -1;
-  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0) return -1;
-  if((lep_pdgId()[tightlep[0] ]*lep_pdgId()[tightlep[1] ])<0) return -1;
+  if(tightlep.size()!=2)                                                return -1;
+  if(vetolep.size()!=0)                                                 return -1;
+  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0)                      return -1;
+  if((lep_pdgId()[tightlep[0] ]*lep_pdgId()[tightlep[1] ])<0)           return -1;
   bool ee = false; bool em = false; bool mm = false;
-  if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[tightlep[1] ]))==121&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-90.)>10.) ee = true;
+  if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[tightlep[1] ]))==121&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-MZ)>10.) ee = true;
   if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[tightlep[1] ]))==143)  em = true;
   if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[tightlep[1] ]))==169)  mm = true;
   if(preselect){
@@ -607,24 +636,24 @@ int isSRSS(vector<int> tightlep, vector<int> vetolep,  bool preselect, float max
   if(ee&&met.Pt()>40.&&(lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()>40.) return 0;
   if(mm&&              (lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()>40.) return 2;
   if(em&&met.Pt()>40.&&(lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()>30.) {
-    if(maxMT<0){
-      float tempmaxMT = calcMTmax(tightlep,met);
+    if(      maxMT>90.) return 1;
+    else if(maxMT<0){
+      float tempmaxMT = calcMTmax(tightlep[0],tightlep[1],met);
       if(tempmaxMT>90.) return 1;
     }
-    else if(maxMT>90.) return 1;
   }
   return -1;
 }
 
 int isARSS(vector<int> tightlep, vector<int> looselep, vector<int> vetolep,  bool preselect, float maxMT, int nj, int nb, float Mjj, float MjjL, float Detajj, LorentzVector MET, int jec){
   if(!passJetSSstate(preselect, nj, nb, Mjj, MjjL, Detajj, false, jec)) return -1;
-  if(tightlep.size()!=1) return -1;
-  if(looselep.size()!=1) return -1;
-  if(vetolep.size()!=0)  return -1;
-  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0) return -1;
-  if((lep_pdgId()[tightlep[0] ]*lep_pdgId()[looselep[0] ])<0) return -1;
+  if(tightlep.size()!=1)                                                return -1;
+  if(looselep.size()!=1)                                                return -1;
+  if(vetolep.size()!=0)                                                 return -1;
+  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0)                      return -1;
+  if((lep_pdgId()[tightlep[0] ]*lep_pdgId()[looselep[0] ])<0)           return -1;
   bool ee = false; bool em = false; bool mm = false;
-  if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[looselep[0] ]))==121&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()-90.)>10.) ee = true;
+  if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[looselep[0] ]))==121&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()-MZ)>10.) ee = true;
   if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[looselep[0] ]))==143)  em = true;
   if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[looselep[0] ]))==169)  mm = true;
   if(preselect){
@@ -641,43 +670,41 @@ int isARSS(vector<int> tightlep, vector<int> looselep, vector<int> vetolep,  boo
   if(ee&&met.Pt()>40.&&(lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()>40.) return 0;
   if(mm&&              (lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()>40.) return 2;
   if(em&&met.Pt()>40.&&(lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()>30.) {
-    if(maxMT<0){
-      vector<int> temp;
-      temp.push_back(tightlep[0]); temp.push_back(looselep[0]);
-      float tempmaxMT = calcMTmax(temp,met);
+    if(      maxMT>90.) return 1;
+    else if(maxMT<0){
+      float tempmaxMT = calcMTmax(tightlep[0],looselep[0],met);
       if(tempmaxMT>90.) return 1;
     }
-    else if(maxMT>90.) return 1;
   }
   return -1;
 }
 
 int isCRSS(vector<int> tightlep, vector<int> selectlep, vector<int> vetolep, bool preselect, float maxMT, int nj, int nb, float Mjj, float MjjL, float Detajj, LorentzVector MET, int jec, bool noZ){
   if(!passJetSSstate(preselect, nj, nb, Mjj, MjjL, Detajj, true, jec)) return -1;
-  if(tightlep.size()  <2) return -1;
-  if(selectlep.size()!=3) return -1;
-  if(vetolep.size()!=0)   return -1;
-  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0) return -1;
+  if(tightlep.size()  <2)                                              return -1;
+  if(selectlep.size()!=3)                                              return -1;
+  if(vetolep.size()!=0)                                                return -1;
+  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0)                     return -1;
   //SS is just tighter pt, so can loop over i3l
   bool isSS = false;
   int lep3 = -1; int SS1 = -1; int SS2 = -1;
   if((lep_pdgId()[selectlep[0] ]*lep_pdgId()[selectlep[1] ])>0) { lep3 = selectlep[2]; SS1 = selectlep[0]; SS2 = selectlep[1]; isSS = true; }
   if((lep_pdgId()[selectlep[0] ]*lep_pdgId()[selectlep[2] ])>0) { lep3 = selectlep[1]; SS1 = selectlep[0]; SS2 = selectlep[2]; isSS = true; }
   if((lep_pdgId()[selectlep[1] ]*lep_pdgId()[selectlep[2] ])>0) { lep3 = selectlep[0]; SS1 = selectlep[1]; SS2 = selectlep[2]; isSS = true; }
-  if(!isSS) return -1;
+  if(!isSS)       return -1;
   if(!noZ){
     bool hasSFOSZ = false;
-    if((lep_pdgId()[SS1]==(-lep_pdgId()[lep3]))&&(fabs((lep_p4()[SS1]+lep_p4()[lep3]).M()-90.)<=10)) hasSFOSZ = true;
-    if((lep_pdgId()[SS2]==(-lep_pdgId()[lep3]))&&(fabs((lep_p4()[SS2]+lep_p4()[lep3]).M()-90.)<=10)) hasSFOSZ = true;
+    if((lep_pdgId()[SS1]==(-lep_pdgId()[lep3]))&&(fabs((lep_p4()[SS1]+lep_p4()[lep3]).M()-MZ)<=10)) hasSFOSZ = true;
+    if((lep_pdgId()[SS2]==(-lep_pdgId()[lep3]))&&(fabs((lep_p4()[SS2]+lep_p4()[lep3]).M()-MZ)<=10)) hasSFOSZ = true;
     if(!hasSFOSZ) return -1;
   } else {
     bool hasSFOS = false;
     if((lep_pdgId()[SS1]==(-lep_pdgId()[lep3]))) hasSFOS = true;
     if((lep_pdgId()[SS2]==(-lep_pdgId()[lep3]))) hasSFOS = true;
-    if(!hasSFOS) return -1;
+    if(!hasSFOS)  return -1;
   }
   bool ee = false; bool em = false; bool mm = false;
-  if(((lep_pdgId()[SS1])*(lep_pdgId()[SS2]))==121&&fabs((lep_p4()[SS1]+lep_p4()[SS2]).M()-90.)>10.) ee = true;
+  if(((lep_pdgId()[SS1])*(lep_pdgId()[SS2]))==121&&fabs((lep_p4()[SS1]+lep_p4()[SS2]).M()-MZ)>10.) ee = true;
   if(((lep_pdgId()[SS1])*(lep_pdgId()[SS2]))==143)  em = true;
   if(((lep_pdgId()[SS1])*(lep_pdgId()[SS2]))==169)  mm = true;
   if(preselect){
@@ -694,9 +721,9 @@ int isCRSS(vector<int> tightlep, vector<int> selectlep, vector<int> vetolep, boo
   if(ee&&met.Pt()>40.&&(lep_p4()[selectlep[0] ]+lep_p4()[selectlep[1] ]).M()>40.) return 0;
   if(mm&&              (lep_p4()[selectlep[0] ]+lep_p4()[selectlep[1] ]).M()>40.) return 2;
   if(em&&met.Pt()>40.&&(lep_p4()[selectlep[0] ]+lep_p4()[selectlep[1] ]).M()>30.) {
-    if(maxMT>90.) return 1;
+    if(      maxMT>90.) return 1;
     else if(maxMT<0){
-      float tempmaxMT = calcMTmax(selectlep,met);
+      float tempmaxMT = calcMTmax(SS1,SS2,met);
       if(tempmaxMT>90.) return 1;
     }
   }
@@ -718,8 +745,8 @@ int isSR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector M
     else if(jec==1)    met.SetPxPyPzE(met_T1CHS_miniAOD_CORE_up_pt()*std::cos(met_T1CHS_miniAOD_CORE_up_phi()),met_T1CHS_miniAOD_CORE_up_pt()*std::sin(met_T1CHS_miniAOD_CORE_up_phi()),0,met_T1CHS_miniAOD_CORE_up_pt());
     else if(jec==(-1)) met.SetPxPyPzE(met_T1CHS_miniAOD_CORE_dn_pt()*std::cos(met_T1CHS_miniAOD_CORE_dn_phi()),met_T1CHS_miniAOD_CORE_dn_pt()*std::sin(met_T1CHS_miniAOD_CORE_dn_phi()),0,met_T1CHS_miniAOD_CORE_dn_pt());
     else               met.SetPxPyPzE(met_pt()*std::cos(met_phi()),met_pt()*std::sin(met_phi()),0,met_pt());
-    if(fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-90.)<10.) return -1;
-    if((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).Pt()<60.) return -1;
+    if(fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-MZ)<10.) return -1;
+    if(     (lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).Pt()   <60.) return -1;
     DPhilllMET = deltaPhi((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).Phi(),met.Phi());
   }
   else DPhilllMET = 3.2;//pass DPhilllMET if preselect
@@ -740,9 +767,9 @@ int isSR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector M
     if(SF01&&(lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()<20.) { pass0 = false; }
     if(SF02&&(lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()<20.) { pass0 = false; }
     if(SF12&&(lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()<20.) { pass0 = false; }
-    if(SF01&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-90.)<15.) { pass0 = false; }
-    if(SF02&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()-90.)<15.) { pass0 = false; }
-    if(SF12&&abs(lep_pdgId()[tightlep[1] ])==11&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-90.)<15.) { pass0 = false; }
+    if(SF01&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-MZ)<15.) { pass0 = false; }
+    if(SF02&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()-MZ)<15.) { pass0 = false; }
+    if(SF12&&abs(lep_pdgId()[tightlep[1] ])==11&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-MZ)<15.) { pass0 = false; }
   }
   if(SFOScounter==1){
     pass1 = true;
@@ -754,9 +781,9 @@ int isSR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector M
   if(SFOScounter==2){
     pass2 = true;
     if(!preselect&&met.Pt()<55) { pass2=false; }
-    if(OS01&&SF01&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-90.)<20.) { pass2 = false; }
-    if(OS02&&SF02&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()-90.)<20.) { pass2 = false; }
-    if(OS12&&SF12&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-90.)<20.) { pass2 = false; }
+    if(OS01&&SF01&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-MZ)<20.) { pass2 = false; }
+    if(OS02&&SF02&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()-MZ)<20.) { pass2 = false; }
+    if(OS12&&SF12&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-MZ)<20.) { pass2 = false; }
   }
   if(DPhilllMET>=2.7&&pass0 ) return 0;
   if(DPhilllMET>=2.5&&pass1 ) return 1;
@@ -780,8 +807,8 @@ int isAR3l(vector<int> tightlep, vector<int> looselep, bool preselect, int nj, i
     else if(jec==1)    met.SetPxPyPzE(met_T1CHS_miniAOD_CORE_up_pt()*std::cos(met_T1CHS_miniAOD_CORE_up_phi()),met_T1CHS_miniAOD_CORE_up_pt()*std::sin(met_T1CHS_miniAOD_CORE_up_phi()),0,met_T1CHS_miniAOD_CORE_up_pt());
     else if(jec==(-1)) met.SetPxPyPzE(met_T1CHS_miniAOD_CORE_dn_pt()*std::cos(met_T1CHS_miniAOD_CORE_dn_phi()),met_T1CHS_miniAOD_CORE_dn_pt()*std::sin(met_T1CHS_miniAOD_CORE_dn_phi()),0,met_T1CHS_miniAOD_CORE_dn_pt());
     else               met.SetPxPyPzE(met_pt()*std::cos(met_phi()),met_pt()*std::sin(met_phi()),0,met_pt());
-    if(fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[looselep[0] ]).M()-90.)<10.) return -1;
-    if((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[looselep[0] ]).Pt()<60.) return -1;
+    if(fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[looselep[0] ]).M()-MZ)<10.) return -1;
+    if(     (lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[looselep[0] ]).Pt()   <60.) return -1;
     DPhilllMET = deltaPhi((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[looselep[0] ]).Phi(),met.Phi());
   }
   else DPhilllMET = 3.2;//pass DPhilllMET if preselect
@@ -802,9 +829,9 @@ int isAR3l(vector<int> tightlep, vector<int> looselep, bool preselect, int nj, i
     if(SF01&&(lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()<20.) { pass0 = false; }
     if(SF02&&(lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()<20.) { pass0 = false; }
     if(SF12&&(lep_p4()[tightlep[1] ]+lep_p4()[looselep[0] ]).M()<20.) { pass0 = false; }
-    if(SF01&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-90.)<15.) { pass0 = false; }
-    if(SF02&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()-90.)<15.) { pass0 = false; }
-    if(SF12&&abs(lep_pdgId()[tightlep[1] ])==11&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[looselep[0] ]).M()-90.)<15.) { pass0 = false; }
+    if(SF01&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-MZ)<15.) { pass0 = false; }
+    if(SF02&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()-MZ)<15.) { pass0 = false; }
+    if(SF12&&abs(lep_pdgId()[tightlep[1] ])==11&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[looselep[0] ]).M()-MZ)<15.) { pass0 = false; }
   }
   if(SFOScounter==1){
     pass1 = true;
@@ -816,9 +843,9 @@ int isAR3l(vector<int> tightlep, vector<int> looselep, bool preselect, int nj, i
   if(SFOScounter==2){
     pass2 = true;
     if(!preselect&&met.Pt()<55) { pass2=false; }
-    if(OS01&&SF01&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-90.)<20.) { pass2 = false; }
-    if(OS02&&SF02&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()-90.)<20.) { pass2 = false; }
-    if(OS12&&SF12&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[looselep[0] ]).M()-90.)<20.) { pass2 = false; }
+    if(OS01&&SF01&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-MZ)<20.) { pass2 = false; }
+    if(OS02&&SF02&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()-MZ)<20.) { pass2 = false; }
+    if(OS12&&SF12&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[looselep[0] ]).M()-MZ)<20.) { pass2 = false; }
   }
   if(DPhilllMET>=2.7&&pass0 ) return 0;
   if(DPhilllMET>=2.5&&pass1 ) return 1;
@@ -841,8 +868,8 @@ int isCR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector M
     else if(jec==1)    met.SetPxPyPzE(met_T1CHS_miniAOD_CORE_up_pt()*std::cos(met_T1CHS_miniAOD_CORE_up_phi()),met_T1CHS_miniAOD_CORE_up_pt()*std::sin(met_T1CHS_miniAOD_CORE_up_phi()),0,met_T1CHS_miniAOD_CORE_up_pt());
     else if(jec==(-1)) met.SetPxPyPzE(met_T1CHS_miniAOD_CORE_dn_pt()*std::cos(met_T1CHS_miniAOD_CORE_dn_phi()),met_T1CHS_miniAOD_CORE_dn_pt()*std::sin(met_T1CHS_miniAOD_CORE_dn_phi()),0,met_T1CHS_miniAOD_CORE_dn_pt());
     else               met.SetPxPyPzE(met_pt()*std::cos(met_phi()),met_pt()*std::sin(met_phi()),0,met_pt());
-    if(fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-90.)<10.) return -1;
-    if((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).Pt()<60.) return -1;
+    if(fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-MZ)<10.) return -1;
+    if(     (lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).Pt()   <60.) return -1;
     DPhilllMET = deltaPhi((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).Phi(),met.Phi());
   }
   else DPhilllMET = 3.2;//pass DPhilllMET if preselect
@@ -872,9 +899,9 @@ int isCR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector M
     pass2X = true;
     if(!preselect&&met.Pt()<55) { pass2X=false; }
     bool atleastoneSFOSZ = false;
-    if(OS01&&SF01&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-90.)<20.) { atleastoneSFOSZ = true; }
-    if(OS02&&SF02&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()-90.)<20.) { atleastoneSFOSZ = true; }
-    if(OS12&&SF12&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-90.)<20.) { atleastoneSFOSZ = true; }
+    if(OS01&&SF01&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-MZ)<20.) { atleastoneSFOSZ = true; }
+    if(OS02&&SF02&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()-MZ)<20.) { atleastoneSFOSZ = true; }
+    if(OS12&&SF12&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-MZ)<20.) { atleastoneSFOSZ = true; }
     if(!atleastoneSFOSZ) pass2X = false;
   }
   if(DPhilllMET>=2.7&&pass0X ) return 0;
@@ -899,8 +926,8 @@ bool checkbothSRCR3l(int &isSR3l, int &isCR3l, vector<int> tightlep, bool presel
     else if(jec==1)    met.SetPxPyPzE(met_T1CHS_miniAOD_CORE_up_pt()*std::cos(met_T1CHS_miniAOD_CORE_up_phi()),met_T1CHS_miniAOD_CORE_up_pt()*std::sin(met_T1CHS_miniAOD_CORE_up_phi()),0,met_T1CHS_miniAOD_CORE_up_pt());
     else if(jec==(-1)) met.SetPxPyPzE(met_T1CHS_miniAOD_CORE_dn_pt()*std::cos(met_T1CHS_miniAOD_CORE_dn_phi()),met_T1CHS_miniAOD_CORE_dn_pt()*std::sin(met_T1CHS_miniAOD_CORE_dn_phi()),0,met_T1CHS_miniAOD_CORE_dn_pt());
     else               met.SetPxPyPzE(met_pt()*std::cos(met_phi()),met_pt()*std::sin(met_phi()),0,met_pt());
-    if(fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-90.)<10.) return true;
-    if((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).Pt()<60.) return true;
+    if(fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-MZ)<10.) return true;
+    if(     (lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).Pt()   <60.) return true;
     DPhilllMET = deltaPhi((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).Phi(),met.Phi());
   }
   else DPhilllMET = 3.2;//pass DPhilllMET if preselect
@@ -923,9 +950,9 @@ bool checkbothSRCR3l(int &isSR3l, int &isCR3l, vector<int> tightlep, bool presel
     if(SF02&&(lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()<20.) { pass0 = false; pass0X = false; }
     if(SF12&&(lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()<20.) { pass0 = false; pass0X = false; }
     bool atleastoneSFOSZ = false;
-    if(SF01&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-90.)<15.) { pass0 = false; if(OS01) atleastoneSFOSZ = true; }
-    if(SF02&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()-90.)<15.) { pass0 = false; if(OS02) atleastoneSFOSZ = true; }
-    if(SF12&&abs(lep_pdgId()[tightlep[1] ])==11&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-90.)<15.) { pass0 = false; if(OS12) atleastoneSFOSZ = true; }
+    if(SF01&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-MZ)<15.) { pass0 = false; if(OS01) atleastoneSFOSZ = true; }
+    if(SF02&&abs(lep_pdgId()[tightlep[0] ])==11&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()-MZ)<15.) { pass0 = false; if(OS02) atleastoneSFOSZ = true; }
+    if(SF12&&abs(lep_pdgId()[tightlep[1] ])==11&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-MZ)<15.) { pass0 = false; if(OS12) atleastoneSFOSZ = true; }
     if(!atleastoneSFOSZ) pass0X = false;//this is always false :)
   }
   if(SFOScounter==1){
@@ -941,9 +968,9 @@ bool checkbothSRCR3l(int &isSR3l, int &isCR3l, vector<int> tightlep, bool presel
     pass2 = true; pass2X = true;
     if(!preselect&&met.Pt()<55) { pass2=false; pass2X=false; }
     bool atleastoneSFOSZ = false;
-    if(OS01&&SF01&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-90.)<20.) { pass2 = false; atleastoneSFOSZ = true; }
-    if(OS02&&SF02&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()-90.)<20.) { pass2 = false; atleastoneSFOSZ = true; }
-    if(OS12&&SF12&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-90.)<20.) { pass2 = false; atleastoneSFOSZ = true; }
+    if(OS01&&SF01&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-MZ)<20.) { pass2 = false; atleastoneSFOSZ = true; }
+    if(OS02&&SF02&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[2] ]).M()-MZ)<20.) { pass2 = false; atleastoneSFOSZ = true; }
+    if(OS12&&SF12&&fabs((lep_p4()[tightlep[1] ]+lep_p4()[tightlep[2] ]).M()-MZ)<20.) { pass2 = false; atleastoneSFOSZ = true; }
     if(!atleastoneSFOSZ) pass2X = false;
   }
   //SR
@@ -1026,7 +1053,6 @@ map<string, TH1D*> bookhistograms(string samplename, vector<string> histonames, 
     } else {
       mapname = histonames[i] + "_"+samplename;
       if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
-      //histos[mapname]->Sumw2(); histos[mapname]->SetDirectory(rootdir);
     }
   }
   for(map<string,TH1D*>::iterator h=histos.begin(); h!=histos.end();++h){
@@ -1052,13 +1078,13 @@ bool SaveHistosToFile(string filename, map<string, TH1D*> histos, bool addunderf
   for(map<string,TH1D*>::iterator h=histos.begin(); h!=histos.end();++h){
     //add overflow
     if(addoverflow){
-      h->second->SetBinContent(h->second->GetNbinsX(), h->second->GetBinContent(h->second->GetNbinsX() )+ h->second->GetBinContent(h->second->GetNbinsX()+1) );
-      h->second->SetBinError(h->second->GetNbinsX(), sqrt(pow(h->second->GetBinError(h->second->GetNbinsX() ),2)+pow(h->second->GetBinError(h->second->GetNbinsX()+1),2) ) );
+      h->second->SetBinContent(h->second->GetNbinsX(),          h->second->GetBinContent(h->second->GetNbinsX() )   +    h->second->GetBinContent(h->second->GetNbinsX()+1) );
+      h->second->SetBinError(  h->second->GetNbinsX(), sqrt(pow(h->second->GetBinError(  h->second->GetNbinsX() ),2)+pow(h->second->GetBinError(  h->second->GetNbinsX()+1),2) ) );
     }
     //add underflow
     if(addunderflow){
-      h->second->SetBinContent(1, h->second->GetBinContent(1)+ h->second->GetBinContent(0) );
-      h->second->SetBinError(1, sqrt(pow(h->second->GetBinError(1),2)+pow(h->second->GetBinError(0),2) ) );
+      h->second->SetBinContent(1,          h->second->GetBinContent(1)   +    h->second->GetBinContent(0) );
+      h->second->SetBinError(  1, sqrt(pow(h->second->GetBinError(  1),2)+pow(h->second->GetBinError(  0),2) ) );
     }
   }
   
@@ -1083,11 +1109,11 @@ int loadlepSFfile(TFile *&f, TH2F *&hMuID, TH2F *&hMutrigger, TH2F *&hElID, TH2F
   if(!fileexists(filename)) return -1;
   f = new TFile(filename.c_str(),"read");
   int id = 0;
-  if(f->GetListOfKeys()->Contains(muIDname.c_str()))  hMuID = (TH2F*)f->Get(muIDname.c_str());
+  if(f->GetListOfKeys()->Contains(muIDname.c_str()  ))  hMuID      = (TH2F*)f->Get(muIDname.c_str());
   else id += 10;
   //if(f->GetListOfKeys()->Contains(mutrigname.c_str())) hMutrigger = (TH2F*)f->Get(mutrigname.c_str());
   //else id += 100;
-  if(f->GetListOfKeys()->Contains(elIDname.c_str()))  hElID = (TH2F*)f->Get(elIDname.c_str());
+  if(f->GetListOfKeys()->Contains(elIDname.c_str()  ))  hElID      = (TH2F*)f->Get(elIDname.c_str());
   else id +=1000;
   if(f->GetListOfKeys()->Contains(eltrigname.c_str()))  hEltrigger = (TH2F*)f->Get(eltrigname.c_str());
   else id +=10000;
@@ -1136,17 +1162,17 @@ float getlepSFandError(float &error, int index, TH2F *hMuID, TH2F *hMutrigger, T
   float binx,biny;
   if(abs(lep_pdgId()[index])==11){
     if(!(hElID==0)){
-      if(elIDetamin<0) binx = std::max(elIDetamin,std::min(elIDetamax,lep_etaSC()[index]));
-      else             binx = std::max(elIDetamin,std::min(elIDetamax,fabs(lep_etaSC()[index])));
-      biny = std::max(elIDptmin,std::min(elIDptmax,lep_p4()[index].Pt()));
+      if(elIDetamin<0)   binx = std::max(elIDetamin,std::min(elIDetamax,lep_etaSC()[index]));
+      else               binx = std::max(elIDetamin,std::min(elIDetamax,fabs(lep_etaSC()[index])));
+      biny = std::max(elIDptmin,std::min(elIDptmax, lep_p4()[index].Pt()));
       bin = hElID->FindBin(binx, biny);
       SF1 = hElID->GetBinContent(bin);
       SF1err2 = pow(hElID->GetBinError(bin),2);
     }
     if(!(hEltrigger==0)){
-      if(elTretamin<0) binx = std::max(elTretamin,std::min(elTretamax,lep_etaSC()[index]));
-      else             binx = std::max(elTretamin,std::min(elTretamax,fabs(lep_etaSC()[index])));
-      biny = std::max(elTrptmin,std::min(elTrptmax,lep_p4()[index].Pt()));
+      if(elTretamin<0)   binx = std::max(elTretamin,std::min(elTretamax,lep_etaSC()[index]));
+      else               binx = std::max(elTretamin,std::min(elTretamax,fabs(lep_etaSC()[index])));
+      biny = std::max(elTrptmin,std::min(elTrptmax, lep_p4()[index].Pt()));
       bin = hEltrigger->FindBin(binx, biny);
       SF2 = hEltrigger->GetBinContent(bin);
       SF2err2 = pow(hEltrigger->GetBinError(bin),2);
@@ -1154,23 +1180,21 @@ float getlepSFandError(float &error, int index, TH2F *hMuID, TH2F *hMutrigger, T
   }
   if(abs(lep_pdgId()[index])==13){
     if(!(hMuID==0)){
-      if(muIDetamin<0) binx = std::max(muIDetamin,std::min(muIDetamax,lep_p4()[index].Eta()));
-      else             binx = std::max(muIDetamin,std::min(muIDetamax,fabs(lep_p4()[index].Eta())));
-      biny = std::max(muIDptmin,std::min(muIDptmax,lep_p4()[index].Pt()));
+      if(muIDetamin<0)   binx = std::max(muIDetamin,std::min(muIDetamax,lep_p4()[index].Eta()));
+      else               binx = std::max(muIDetamin,std::min(muIDetamax,fabs(lep_p4()[index].Eta())));
+      biny = std::max(muIDptmin,std::min(muIDptmax, lep_p4()[index].Pt()));
       bin = hMuID->FindBin(binx, biny);
       SF1 = hMuID->GetBinContent(bin);
       SF1err2 = pow(hMuID->GetBinError(bin),2);
     }
-    /*
-    if(!(hMutrigger==0)){
-      if(muTretamin<0) binx = std::max(muTretamin,std::min(muTretamax,lep_p4()[index].Eta()));
-      else             binx = std::max(muTretamin,std::min(muTretamax,fabs(lep_p4()[index].Eta())));
-      biny = std::max(muTrptmin,std::min(muTrptmax,lep_p4()[index].Pt()));
-      bin = hMutrigger->FindBin(binx, biny);
-      SF2 = hMutrigger->GetBinContent(bin);
-      SF2err2 = pow(hMutrigger->GetBinError(bin),2);
-    }
-    */
+    //if(!(hMutrigger==0)){
+    //  if(muTretamin<0)   binx = std::max(muTretamin,std::min(muTretamax,lep_p4()[index].Eta()));
+    //  else               binx = std::max(muTretamin,std::min(muTretamax,fabs(lep_p4()[index].Eta())));
+    //  biny = std::max(muTrptmin,std::min(muTrptmax, lep_p4()[index].Pt()));
+    //  bin = hMutrigger->FindBin(binx, biny);
+    //  SF2 = hMutrigger->GetBinContent(bin);
+    //  SF2err2 = pow(hMutrigger->GetBinError(bin),2);
+    //}
   }
   error = sqrt(pow(SF1,2)*SF2err2+pow(SF2,2)*SF1err2);
  
@@ -1197,7 +1221,7 @@ float getlepSFWeightandError(float &error, vector<int> tightlep, vector<int> loo
 float getlepSFWeightandError(float &error, vector<float> efftight, vector<float> errtight, vector<float> effloose, vector<float> errloose){
 
   vector<float> SF = efftight;
-  SF.insert( SF.end(), effloose.begin(), effloose.end() );
+  SF.insert(    SF.end(),    effloose.begin(), effloose.end() );
   vector<float> SFerr = errtight;
   SFerr.insert( SFerr.end(), errloose.begin(), errloose.end() );
   float SFsum = 1;
@@ -1228,20 +1252,20 @@ bool checkthisevent(vector<myevt> eventvector, unsigned int runnumber, unsigned 
   return false;
 }
 void addeventtolist(std::ostringstream *&stream){
-  *stream << tas::run() << ":" << tas::lumi() << tas::evt() << endl;
+  *stream << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
 }
 void addeventtolist(int SS, std::ostringstream *&streamEE, std::ostringstream *&streamEM, std::ostringstream *&streamMM){
-  if(SS==0) *streamEE << tas::run() << ":" << tas::lumi() << tas::evt() << endl;
-  if(SS==1) *streamEM << tas::run() << ":" << tas::lumi() << tas::evt() << endl;
-  if(SS==2) *streamMM << tas::run() << ":" << tas::lumi() << tas::evt() << endl;
+  if(SS==0) *streamEE << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
+  if(SS==1) *streamEM << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
+  if(SS==2) *streamMM << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
 }
 void addeventtolist(int SRSS, int SR3l, std::ostringstream *&streamEE, std::ostringstream *&streamEM, std::ostringstream *&streamMM, std::ostringstream *&stream0SFOS, std::ostringstream *&stream1SFOS, std::ostringstream *&stream2SFOS){
-  if(SRSS==0) *streamEE    << tas::run() << ":" << tas::lumi() << tas::evt() << endl;
-  if(SRSS==1) *streamEM    << tas::run() << ":" << tas::lumi() << tas::evt() << endl;
-  if(SRSS==2) *streamMM    << tas::run() << ":" << tas::lumi() << tas::evt() << endl;
-  if(SR3l==0) *stream0SFOS << tas::run() << ":" << tas::lumi() << tas::evt() << endl;
-  if(SR3l==1) *stream1SFOS << tas::run() << ":" << tas::lumi() << tas::evt() << endl;
-  if(SR3l==2) *stream2SFOS << tas::run() << ":" << tas::lumi() << tas::evt() << endl;
+  if(SRSS==0) *streamEE    << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
+  if(SRSS==1) *streamEM    << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
+  if(SRSS==2) *streamMM    << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
+  if(SR3l==0) *stream0SFOS << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
+  if(SR3l==1) *stream1SFOS << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
+  if(SR3l==2) *stream2SFOS << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl;
 }
 void storeeventlist(string output, string sample, std::ostringstream *&stream){
   ofstream log    ((string(output+"_"+sample+".log")).c_str(), ios::trunc);
@@ -1251,7 +1275,7 @@ void storeeventlist(string output, string sample, std::ostringstream *&stream){
 void storeeventlist(string output, string sample, bool isSS, std::ostringstream *&streamEE, std::ostringstream *&streamEM, std::ostringstream *streamMM){
   if(isSS){
     ofstream logEE   ((string(output+   "EE_"+sample+".log")).c_str(), ios::trunc);
-    logEE   << streamMM->str();
+    logEE   << streamEE->str();
     ofstream logEM   ((string(output+   "EM_"+sample+".log")).c_str(), ios::trunc);
     logEM   << streamEM->str();
     ofstream logMM   ((string(output+   "MM_"+sample+".log")).c_str(), ios::trunc);
@@ -1259,7 +1283,7 @@ void storeeventlist(string output, string sample, bool isSS, std::ostringstream 
   }
   else{
     ofstream log0SFOS((string(output+"0SFOS_"+sample+".log")).c_str(), ios::trunc);
-    log0SFOS<< streamMM->str();
+    log0SFOS<< streamEE->str();
     ofstream log1SFOS((string(output+"1SFOS_"+sample+".log")).c_str(), ios::trunc);
     log1SFOS<< streamEM->str();
     ofstream log2SFOS((string(output+"2SFOS_"+sample+".log")).c_str(), ios::trunc);
@@ -1272,7 +1296,7 @@ void storeeventlist(string output, string sample, bool isSS, std::ostringstream 
 }
 void storeeventlist(string output, string sample, std::ostringstream *&streamEE, std::ostringstream *&streamEM, std::ostringstream *&streamMM, std::ostringstream *&stream0SFOS, std::ostringstream *&stream1SFOS, std::ostringstream *&stream2SFOS){
   ofstream logEE   ((string(output+   "EE_"+sample+".log")).c_str(), ios::trunc);
-  logEE   << streamMM   ->str();
+  logEE   << streamEE   ->str();
   ofstream logEM   ((string(output+   "EM_"+sample+".log")).c_str(), ios::trunc);
   logEM   << streamEM   ->str();
   ofstream logMM   ((string(output+   "MM_"+sample+".log")).c_str(), ios::trunc);
