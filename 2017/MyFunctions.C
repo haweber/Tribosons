@@ -3,6 +3,23 @@
 using namespace std;
 using namespace tas;
 
+vector<string> split(string mystring, string c) {
+  string s = mystring;
+  vector<string> v;
+  string::size_type i = 0;
+  string::size_type j = s.find(c);
+
+  while (j != string::npos) {
+    v.push_back(s.substr(i, j-i));
+    i = ++j;
+    j = s.find(c, j);
+    
+    if (j == string::npos)
+      v.push_back(s.substr(i, s.length()));
+   }
+  return v;
+}
+
 int gentype_v2(unsigned lep1_index,unsigned lep2_index, int lep3_index){
   bool gammafake = false;
   bool jetfake   = false;
@@ -593,31 +610,33 @@ bool vetophotonprocess(string filename, bool process){
   return false;
 }
 
-bool passJetSSstate(bool preselect, int nj, int nb, float Mjj, float MjjL, float Detajj, bool is3lCR, int jec){
+bool passJetSSstate(bool preselect, int nj, int nb, float Mjj, float MjjL, float Detajj, bool is3lCR, int jec, bool btag, bool Mjjside){
   int numj = nj;
   int numb = nb;
   int x;
   if(nb<0||nj<0) getalljetnumbers(x,numj,numb, jec);
-  if(numj<2)    return false;
-  if(numb>0)    return false;
-  if(preselect) return true;
+  if(numj<2)         return false;
+  if( btag&&numb==0) return false;
+  if(!btag&&numb>0)  return false;
+  if(preselect)      return true;
   float Massjj  = Mjj;
   float MassjjL = MjjL;
   float Deta    = Detajj;
   if(Mjj<0||MjjL<0||Detajj<0) getMjjAndDeta(Massjj,MassjjL,Deta,jec);
-  if(fabs(Deta)>1.5)       return false;
-  if(fabs(MassjjL)>400.)   return false;
-  if(is3lCR)               return true;
-  if(fabs(Massjj-80.)>20.) return false;
+  if(fabs(Deta)>1.5)                  return false;
+  if(fabs(MassjjL)>400.)              return false;
+  if(is3lCR)                          return true;
+  if( Mjjside&&fabs(Massjj-80.)>20.)  return false;
+  if(!Mjjside&&fabs(Massjj-80.)<=20.) return false;
   return true;
 }
       
-int isSRSS(vector<int> tightlep, vector<int> vetolep,  bool preselect, float maxMT, int nj, int nb, float Mjj, float MjjL, float Detajj, LorentzVector MET, int jec){
-  if(!passJetSSstate(preselect, nj, nb, Mjj, MjjL, Detajj, false, jec)) return -1;
-  if(tightlep.size()!=2)                                                return -1;
-  if(vetolep.size()!=0)                                                 return -1;
-  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0)                      return -1;
-  if((lep_pdgId()[tightlep[0] ]*lep_pdgId()[tightlep[1] ])<0)           return -1;
+int isSRSS(vector<int> tightlep, vector<int> vetolep,  bool preselect, float maxMT, int nj, int nb, float Mjj, float MjjL, float Detajj, LorentzVector MET, int jec, bool btag, bool Mjjside){
+  if(!passJetSSstate(preselect, nj, nb, Mjj, MjjL, Detajj, false, jec, btag, Mjjside)) return -1;
+  if(tightlep.size()!=2)                                                               return -1;
+  if(vetolep.size()!=0)                                                                return -1;
+  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0)                                     return -1;
+  if((lep_pdgId()[tightlep[0] ]*lep_pdgId()[tightlep[1] ])<0)                          return -1;
   bool ee = false; bool em = false; bool mm = false;
   if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[tightlep[1] ]))==121&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[tightlep[1] ]).M()-MZ)>10.) ee = true;
   if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[tightlep[1] ]))==143)  em = true;
@@ -645,13 +664,13 @@ int isSRSS(vector<int> tightlep, vector<int> vetolep,  bool preselect, float max
   return -1;
 }
 
-int isARSS(vector<int> tightlep, vector<int> looselep, vector<int> vetolep,  bool preselect, float maxMT, int nj, int nb, float Mjj, float MjjL, float Detajj, LorentzVector MET, int jec){
-  if(!passJetSSstate(preselect, nj, nb, Mjj, MjjL, Detajj, false, jec)) return -1;
-  if(tightlep.size()!=1)                                                return -1;
-  if(looselep.size()!=1)                                                return -1;
-  if(vetolep.size()!=0)                                                 return -1;
-  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0)                      return -1;
-  if((lep_pdgId()[tightlep[0] ]*lep_pdgId()[looselep[0] ])<0)           return -1;
+int isARSS(vector<int> tightlep, vector<int> looselep, vector<int> vetolep,  bool preselect, float maxMT, int nj, int nb, float Mjj, float MjjL, float Detajj, LorentzVector MET, int jec, bool btag, bool Mjjside){
+  if(!passJetSSstate(preselect, nj, nb, Mjj, MjjL, Detajj, false, jec, btag, Mjjside)) return -1;
+  if(tightlep.size()!=1)                                                               return -1;
+  if(looselep.size()!=1)                                                               return -1;
+  if(vetolep.size()!=0)                                                                return -1;
+  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0)                                     return -1;
+  if((lep_pdgId()[tightlep[0] ]*lep_pdgId()[looselep[0] ])<0)                          return -1;
   bool ee = false; bool em = false; bool mm = false;
   if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[looselep[0] ]))==121&&fabs((lep_p4()[tightlep[0] ]+lep_p4()[looselep[0] ]).M()-MZ)>10.) ee = true;
   if(((lep_pdgId()[tightlep[0] ])*(lep_pdgId()[looselep[0] ]))==143)  em = true;
@@ -679,12 +698,12 @@ int isARSS(vector<int> tightlep, vector<int> looselep, vector<int> vetolep,  boo
   return -1;
 }
 
-int isCRSS(vector<int> tightlep, vector<int> selectlep, vector<int> vetolep, bool preselect, float maxMT, int nj, int nb, float Mjj, float MjjL, float Detajj, LorentzVector MET, int jec, bool noZ){
-  if(!passJetSSstate(preselect, nj, nb, Mjj, MjjL, Detajj, true, jec)) return -1;
-  if(tightlep.size()  <2)                                              return -1;
-  if(selectlep.size()!=3)                                              return -1;
-  if(vetolep.size()!=0)                                                return -1;
-  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0)                     return -1;
+int isCRSS(vector<int> tightlep, vector<int> selectlep, vector<int> vetolep, bool preselect, float maxMT, int nj, int nb, float Mjj, float MjjL, float Detajj, LorentzVector MET, int jec, bool noZ, bool btag, bool Mjjside){
+  if(!passJetSSstate(preselect, nj, nb, Mjj, MjjL, Detajj, true, jec, btag, Mjjside)) return -1;
+  if(tightlep.size()  <2)                                                             return -1;
+  if(selectlep.size()!=3)                                                             return -1;
+  if(vetolep.size()!=0)                                                               return -1;
+  if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0)                                    return -1;
   //SS is just tighter pt, so can loop over i3l
   bool isSS = false;
   int lep3 = -1; int SS1 = -1; int SS2 = -1;
@@ -730,13 +749,14 @@ int isCRSS(vector<int> tightlep, vector<int> selectlep, vector<int> vetolep, boo
   return -1;
 }
 		      
-int isSR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector MET, int jec){
+int isSR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector MET, int jec, bool btag){
   int numj = nj;
   int numb = nb;
   int x;
   if(numj<0||numb<0) getalljetnumbers(numj,x,numb, jec);
-  if(numj >1) return -1;
-  if(numb!=0) return -1;
+  if(numj >1)            return -1;
+  if( btag&&numb==0)     return -1;
+  if(!btag&&numb!=0)     return -1;
   if(tightlep.size()!=3) return -1;
   float DPhilllMET = -1;
   LorentzVector met = LorentzVector(0,0,0,0);
@@ -791,13 +811,14 @@ int isSR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector M
   return -1;
 }
 
-int isAR3l(vector<int> tightlep, vector<int> looselep, bool preselect, int nj, int nb, LorentzVector MET, int jec){
+int isAR3l(vector<int> tightlep, vector<int> looselep, bool preselect, int nj, int nb, LorentzVector MET, int jec, bool btag){
   int numj = nj;
   int numb = nb;
   int x;
   if(numj<0||numb<0) getalljetnumbers(numj,x,numb, jec);
-  if(numj >1) return -1;
-  if(numb!=0) return -1;
+  if(numj >1)            return -1;
+  if( btag&&numb==0)     return -1;
+  if(!btag&&numb!=0)     return -1;
   if(tightlep.size()!=2) return -1;
   if(looselep.size()!=1) return -1;
   float DPhilllMET = -1;
@@ -853,13 +874,14 @@ int isAR3l(vector<int> tightlep, vector<int> looselep, bool preselect, int nj, i
   return -1;
 }
 
-int isCR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector MET, int jec){
+int isCR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector MET, int jec, bool btag){
   int numj = nj;
   int numb = nb;
   int x;
   if(numj<0||numb<0) getalljetnumbers(numj,x,numb, jec);
-  if(numj >1) return -1;
-  if(numb!=0) return -1;
+  if(numj >1)            return -1;
+  if( btag&&numb==0)     return -1;
+  if(!btag&&numb!=0)     return -1;
   if(tightlep.size()!=3) return -1;
   float DPhilllMET = -1;
   LorentzVector met = LorentzVector(0,0,0,0);
@@ -910,14 +932,15 @@ int isCR3l(vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector M
   return -1;
 }
 
-bool checkbothSRCR3l(int &isSR3l, int &isCR3l, vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector MET, int jec){
+bool checkbothSRCR3l(int &isSR3l, int &isCR3l, vector<int> tightlep, bool preselect, int nj, int nb, LorentzVector MET, int jec, bool btag){
   isSR3l = -1; isCR3l = -1;//assume no match
   int numj = nj;
   int numb = nb;
   int x;
   if(numj<0||numb<0) getalljetnumbers(numj,x,numb, jec);
-  if(numj >1) return true;
-  if(numb!=0) return true;
+  if(numj >1)            return true;
+  if( btag&&numb==0)     return true;
+  if(!btag&&numb!=0)     return true;
   if(tightlep.size()!=3) return true;
   float DPhilllMET = -1;
   LorentzVector met = LorentzVector(0,0,0,0);
@@ -998,14 +1021,14 @@ vector<float> allMSFOS(vector<int> tightlep, vector<int> looselep){
   return MSFOS;
 }
 
-map<string, TH1D*> bookhistograms(string samplename, vector<string> histonames, vector<int> hbins, vector<float> hlow, vector<float> hup, TDirectory *rootdir, bool splitWW){
+map<string, TH1D*> bookhistograms(string samplename, vector<string> histonames, vector<int> hbins, vector<float> hlow, vector<float> hup, TDirectory *rootdir, int splitWW){
   map<string, TH1D*> histos;
   if(histonames.size()!=hbins.size()) return histos;
   if(histonames.size()!=hlow.size()) return histos;
   if(histonames.size()!=hup.size()) return histos;
   for(unsigned int i = 0; i<histonames.size(); ++i){
     string mapname = histonames[i];
-    if(splitWW){
+    if(splitWW==1){
       if(samplename=="WW"){
 	mapname = histonames[i] + "_WWRest";
 	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
@@ -1022,6 +1045,22 @@ map<string, TH1D*> bookhistograms(string samplename, vector<string> histonames, 
 	mapname = histonames[i] + "_OtherttV";
 	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
 	mapname = histonames[i] + "_ttV3l";
+	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      }
+    }
+    else if(splitWW==2){
+      if(samplename=="WW"){
+	mapname = histonames[i] + "_WWRest";
+	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+	mapname = histonames[i] + "_WWVBS";
+	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+      }
+      if(samplename.find("ttV")!=string::npos){
+	mapname = histonames[i] + "_ttW";
+	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+	mapname = histonames[i] + "_ttZ";
+	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
+	mapname = histonames[i] + "_OtherttV";
 	if(histos.count(mapname) == 0 ) histos[mapname] = new TH1D(mapname.c_str(), "", hbins[i], hlow[i], hup[i]);
       }
     }

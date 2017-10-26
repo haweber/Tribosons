@@ -193,7 +193,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       LorentzVector MET_dn; MET_dn.SetPxPyPzE(met_T1CHS_miniAOD_CORE_dn_pt()*TMath::Cos(met_T1CHS_miniAOD_CORE_dn_phi()),met_T1CHS_miniAOD_CORE_dn_pt()*TMath::Sin(met_T1CHS_miniAOD_CORE_dn_phi()),0,met_T1CHS_miniAOD_CORE_dn_pt());
       //if(fabs(MET.Pt()-METx.Pt())>0.01*MET.Pt()) cout << "Damn " << MET.Pt() << " " << METx.Pt() << endl;
 
-     int nj(0), nb(0), nj30(0);
+      int nj(0), nb(0), nj30(0);
       getalljetnumbers(nj,nj30,nb);
       float Mjj = -1;
       float MjjL = -1; float Detajj = -1;
@@ -521,18 +521,18 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
   SaveHistosToFile("rootfiles/Check3lCRnew.root",histos,true,true);
 
   /*
-  ofstream eventstocheckEElog    ((string("logs/eventListEE_"   +skimFilePrefix+".log")).c_str(), ios::trunc);
-  ofstream eventstocheckEMlog    ((string("logs/eventListEM_"   +skimFilePrefix+".log")).c_str(), ios::trunc);
-  ofstream eventstocheckMMlog    ((string("logs/eventListMM_"   +skimFilePrefix+".log")).c_str(), ios::trunc);
-  ofstream eventstocheck0SFOSlog ((string("logs/eventList0SFOS_"+skimFilePrefix+".log")).c_str(), ios::trunc);
-  ofstream eventstocheck1SFOSlog ((string("logs/eventList1SFOS_"+skimFilePrefix+".log")).c_str(), ios::trunc);
-  ofstream eventstocheck2SFOSlog ((string("logs/eventList2SFOS_"+skimFilePrefix+".log")).c_str(), ios::trunc);
-  eventstocheckEElog    << eventstocheckEE   ->str();
-  eventstocheckEMlog    << eventstocheckEM   ->str();
-  eventstocheckMMlog    << eventstocheckMM   ->str();
-  eventstocheck0SFOSlog << eventstocheck0SFOS->str();
-  eventstocheck1SFOSlog << eventstocheck1SFOS->str();
-  eventstocheck2SFOSlog << eventstocheck2SFOS->str();
+    ofstream eventstocheckEElog    ((string("logs/eventListEE_"   +skimFilePrefix+".log")).c_str(), ios::trunc);
+    ofstream eventstocheckEMlog    ((string("logs/eventListEM_"   +skimFilePrefix+".log")).c_str(), ios::trunc);
+    ofstream eventstocheckMMlog    ((string("logs/eventListMM_"   +skimFilePrefix+".log")).c_str(), ios::trunc);
+    ofstream eventstocheck0SFOSlog ((string("logs/eventList0SFOS_"+skimFilePrefix+".log")).c_str(), ios::trunc);
+    ofstream eventstocheck1SFOSlog ((string("logs/eventList1SFOS_"+skimFilePrefix+".log")).c_str(), ios::trunc);
+    ofstream eventstocheck2SFOSlog ((string("logs/eventList2SFOS_"+skimFilePrefix+".log")).c_str(), ios::trunc);
+    eventstocheckEElog    << eventstocheckEE   ->str();
+    eventstocheckEMlog    << eventstocheckEM   ->str();
+    eventstocheckMMlog    << eventstocheckMM   ->str();
+    eventstocheck0SFOSlog << eventstocheck0SFOS->str();
+    eventstocheck1SFOSlog << eventstocheck1SFOS->str();
+    eventstocheck2SFOSlog << eventstocheck2SFOS->str();
   */
   // return
   deleteFiles((SFloaded>=0),fSF);

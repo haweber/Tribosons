@@ -10,26 +10,19 @@ void makePlotsProcessSRplot(){
     map<string, THStack*> stack;
     vector<string> histonames;
     vector<string> axisnames;
-    //vector<Color_t> cols;
     vector<int> cols;
     vector<int> plottogether;
     vector<string> samples;
     vector<string> samplesleg;
     vector<int> onlySSSFOS;
-    /*
-    TFile *f = TFile::Open("Check3lCRv2.root");
-    
-    histonames.push_back("YieldsSR");                          axisnames.push_back("signal regions");  onlySSSFOS.push_back(0);
-    histonames.push_back("YieldsCR_SSany_dropMjj");            axisnames.push_back("control regions"); onlySSSFOS.push_back(0);
-    */
-    
-    TFile *f = TFile::Open("TestEGMsmearerV1.root");
-    histonames.push_back("YieldsSR");                          axisnames.push_back("signal regions");                          onlySSSFOS.push_back(0);
-    histonames.push_back("YieldsCR");                          axisnames.push_back("three- and lost-lepton control regions");  onlySSSFOS.push_back(0);
-    histonames.push_back("YieldsAR");                          axisnames.push_back("application regions");                     onlySSSFOS.push_back(0);
-    histonames.push_back("YieldsSRnew");                       axisnames.push_back("signal regions");                          onlySSSFOS.push_back(0);
-    histonames.push_back("YieldsCRnew");                       axisnames.push_back("three- and lost-lepton control regions");  onlySSSFOS.push_back(0);
-    histonames.push_back("YieldsARnew");                       axisnames.push_back("application regions");                     onlySSSFOS.push_back(0);
+
+    TFile *f = TFile::Open("rootfiles/newLooper.root");
+    histonames.push_back("SignalRegion");                  caption.push_back("signal region");                                         onlySSSFOS.push_back(0);
+    histonames.push_back("ApplicationRegion");             caption.push_back("application region");                                    onlySSSFOS.push_back(0);
+    histonames.push_back("WZControlRegion");               caption.push_back("lost lepton / 3l-with-Z control region");                onlySSSFOS.push_back(0);
+    histonames.push_back("SignalRegionPresel");            caption.push_back("signal region - preselection");                          onlySSSFOS.push_back(0);
+    histonames.push_back("ApplicationRegionPresel");       caption.push_back("application region - preselection");                     onlySSSFOS.push_back(0);
+    histonames.push_back("WZControlRegionPresel");         caption.push_back("lost lepton / 3l-with-Z control region - preselection"); onlySSSFOS.push_back(0);
 
 
     TColor *lightblue  = new TColor(2001,91/255.,187/255.,241/255.);
@@ -88,11 +81,6 @@ if(!addlostlepto3l)     cols.push_back(2011);
         string stackname = histonames[n];
         stack[stackname] = new THStack();
         stack[stackname]->SetName(stackname.c_str());
-        /*
-        if(onlySSSFOS[0]==1){ stack[stackname]->GetXaxis()->SetBinLabel(1,"e^{#pm}e^{#pm}"); stack[stackname]->GetXaxis()->SetBinLabel(2,"e^{#pm}#mu^{#pm}"); stack[stackname]->GetXaxis()->SetBinLabel(3,"#mu^{#pm}#mu^{#pm}"); }
-        if(onlySSSFOS[0]==2){ stack[stackname]->GetXaxis()->SetBinLabel(1,"e^{#pm}e^{#pm}"); stack[stackname]->GetXaxis()->SetBinLabel(2,"e^{#pm}#mu^{#pm}"); stack[stackname]->GetXaxis()->SetBinLabel(3,"#mu^{#pm}#mu^{#pm}"); }
-        if(onlySSSFOS[0]==0){ stack[stackname]->GetXaxis()->SetBinLabel(1,"e^{#pm}e^{#pm}"); stack[stackname]->GetXaxis()->SetBinLabel(2,"e^{#pm}#mu^{#pm}"); stack[stackname]->GetXaxis()->SetBinLabel(3,"#mu^{#pm}#mu^{#pm}"); stack[stackname]->GetXaxis()->SetBinLabel(4,"0 SFOS"); stack[stackname]->GetXaxis()->SetBinLabel(5,"1 SFOS"); stack[stackname]->GetXaxis()->SetBinLabel(6,"2 SFOS"); }
-        */
         string mapname = "";
         if(data) {
             mapname = histonames[n] + "_Data";
@@ -358,8 +346,8 @@ if(!addlostlepto3l)     cols.push_back(2011);
         signame = stackname + "_"+ samples[1];
 ////        if(twosig) h[signame]->Draw("histsame");
         string outname = stackname + ".pdf";
-        if(logy) outname = "plots/processsplit/log/" + outname;
-        else     outname = "plots/processsplit/" + outname;
+        if(logy) outname = "plots/processsplit/testV2/log/" + outname;
+        else     outname = "plots/processsplit/testV2/" + outname;
         if(onlySSSFOS[n]==0){ leg1  ->Draw(); leg2  ->Draw(); }
         if(onlySSSFOS[n]==1){ leg1SS->Draw(); leg2SS->Draw(); }
         if(onlySSSFOS[n]==2){ leg13l->Draw(); leg23l->Draw(); }

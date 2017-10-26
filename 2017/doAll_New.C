@@ -1,23 +1,21 @@
 {
 
   gROOT->ProcessLine(".L MyFunctions.C+"); 
+  gROOT->ProcessLine(".L NewNminus1Looper.C+");
+  //gROOT->ProcessLine(".L NewValidationLooper.C+");
+  //gROOT->ProcessLine(".L NewSkimmer.C+");
   //gROOT->ProcessLine(".L NewLooper.C+");
   //gROOT->ProcessLine(".L NewFakeRateMethod.C+");
-  gROOT->ProcessLine(".L NewWWTTWSplitter.C+");
+  //gROOT->ProcessLine(".L NewWWTTWSplitter.C+");
   //gROOT->ProcessLine(".L NewCheck3lCR.C+");
-  //gROOT->ProcessLine(".L NewTestLooper.C+");
-  //gROOT->ProcessLine(".L TestLooper.C+");
   const unsigned int chainsize = 18;
   TChain *ch[chainsize];
   string dataset[chainsize];
 
 
-  //string babylocation = "/hadoop/cms/store/user/haweber/AutoTwopler_babies/WWW/merged/ZMET/WWW_vX/skim/";
-  //string babylocation = "/nfs-7/userdata/bhashemi/WWW_babies/WWW_v0.1.4/skim/";
-  //string babylocation = "/hadoop/cms/store/user/bhashemi/AutoTwopler_babies/merged/VVV/WWW_v0.1.16/output/";
-  //string babylocation2 = "/hadoop/cms/store/user/bhashemi/AutoTwopler_babies/merged/VVV/WWW_v0.1.16/output/";
   string babylocation  = "/nfs-7/userdata/bhashemi/WWW_babies/WWW_v0.1.16/skim/";
-  //string babylocation2 = "/nfs-7/userdata/bhashemi/WWW_babies/WWW_v0.1.16/skim/";
+  //string babylocation = "/hadoop/cms/store/user/phchang/metis/wwwlooper/v16_skim_v2_2/WWW_v0_1_16_v16_skim_v2_2/";
+  //string babylocation = "/nfs-7/userdata/haweber/WWWskims/WWW_v0.1.16/";
   string myhelper;
   
   dataset[0] = "WWWv2";
@@ -25,7 +23,7 @@
   myhelper = babylocation + "www_incl_amcnlo_*.root";                   ch[0]->Add(myhelper.c_str());//240000
   dataset[1] = "WWW";
   ch[1] = new TChain("t");
-  myhelper = babylocation + "www_2l_mia_*.root";                        ch[1]->Add(myhelper.c_str());//91900
+  myhelper = babylocation + "www_2l_mia_*.root";                        ch[1]->Add(myhelper.c_str());//91900 //XXX
   myhelper = babylocation + "www_2l_ext1_mia_*.root";                   ch[1]->Add(myhelper.c_str());//164800
 
   dataset[2] = "VVV";
@@ -38,7 +36,7 @@
 
   dataset[3] = "tt1l";
   ch[3] = new TChain("t");
-  myhelper = babylocation + "ttbar_1ltbr_mgmlm_ext1*.root";             ch[3]->Add(myhelper.c_str());
+  myhelper = babylocation + "ttbar_1ltbr_mgmlm_ext1*.root";             ch[3]->Add(myhelper.c_str());//XXX
   myhelper = babylocation + "ttbar_1ltop_mgmlm_ext1*.root";             ch[3]->Add(myhelper.c_str());
 
   dataset[4] = "tt2l";
@@ -92,9 +90,9 @@
   
   dataset[9] = "WZ";
   ch[9] = new TChain("t");
-  myhelper = babylocation + "wz_1l3n_amcnlo*.root";                     ch[9]->Add(myhelper.c_str());
+  myhelper = babylocation + "wz_1l3n_amcnlo*.root";                     ch[9]->Add(myhelper.c_str());//XXX
   myhelper = babylocation + "wz_3lnu_powheg*.root";                     ch[9]->Add(myhelper.c_str());
-  myhelper = babylocation + "wz_lnqq_amcnlo*.root";                     ch[9]->Add(myhelper.c_str());
+  myhelper = babylocation + "wz_lnqq_amcnlo*.root";                     ch[9]->Add(myhelper.c_str());//XXX
   
   dataset[10] = "ZZ";
   ch[10] = new TChain("t");
@@ -156,8 +154,9 @@
   for(int i = 0; i<chainsize; ++i){
     //if(i<16) continue;
     //if(i!=3&&i!=6) continue;
-    //if(i!=3) continue;
-    //if(i==17) continue;
+    //if(i!=6) continue;
+    //if(i!=1&&i!=3&&i!=9&&i!=17) continue;
+    //if(i==16) continue;
     TChain *mych = ch[i];
     string mydataset = dataset[i];
     cout << "Now entering " << mydataset << endl;

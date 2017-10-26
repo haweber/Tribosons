@@ -13,108 +13,22 @@ void makeBigTable(){
     
     bool raw = false;
     bool SoverB = false;
-    bool twosig = true;
+    bool twosig = false;
+    boll addsig = true;
     map<string, TH1D*> h;
     vector<string> histonames;
     vector<string> caption;
     vector<string> samples;
     vector<string> samples2;
-    TFile *f = TFile::Open("Check3lCRv2.root");
-    histonames.push_back("YieldsSR");                                      caption.push_back("SR");
-    histonames.push_back("YieldsCR_using3lorMll");                         caption.push_back("CR: in SS add 3rd $\\ell$. Require SFOS pair within Z mass window: $\\pm$10 GeV (SS); invert SFOS veto (3l)");
-    histonames.push_back("YieldsCR_dropMjj");                              caption.push_back("CR: in SS drop Mjj-W mass cut");
-    histonames.push_back("YieldsCR_SSany_dropMjj");                              caption.push_back("CR: in SS drop Mjj-W mass cut, any leps SS pair");
-    histonames.push_back("YieldsCR_SSany_dropMjj_test");                              caption.push_back("CRtest: in SS drop Mjj-W mass cut, any leps SS pair");
-    histonames.push_back("YieldsCR_SSany_dropMjj_jesdown");                              caption.push_back("CR: in SS drop Mjj-W mass cut, any leps SS pair, JESDOWN");
-    histonames.push_back("YieldsCR_SSany_dropMjj_jesup");                              caption.push_back("CR: in SS drop Mjj-W mass cut, any leps SS pair, JESUP");
-    //histonames.push_back("YieldsSR_invertdPhiPtfor3Mjjfor2l");             caption.push_back("SR: SS inverted Mjj-W mass cut; 3l inverted $\\Delta\\phi(\\ell\\ell\\ell,E_\\mathrm{T}^\\mathrm{miss})$, $p_\\mathrm{T}(\\ell\\ell\\ell)$ cut");
-    //histonames.push_back("YieldsCR_invertdPhiPtfor3Mjjfor2l");             caption.push_back("CR: SS inverted Mjj-W mass cut; 3l inverted $\\Delta\\phi(\\ell\\ell\\ell,E_\\mathrm{T}^\\mathrm{miss})$, $p_\\mathrm{T}(\\ell\\ell\\ell)$ cut");
-    //histonames.push_back("YieldsSR_lowMET");                               caption.push_back("SR but invert MET cut");
-    //histonames.push_back("YieldsCR_lowMET");                               caption.push_back("CR but invert MET cut");
-    //histonames.push_back("YieldsSR_lowMETinvertdPhiPtMjj");                caption.push_back("SR but invert MET cut: SS inverted Mjj-W mass cut; 3l inverted $\\Delta\\phi(\\ell\\ell\\ell,E_\\mathrm{T}^\\mathrm{miss})$, $p_\\mathrm{T}(\\ell\\ell\\ell)$ cut");
-    //histonames.push_back("YieldsCR_lowMETinvertdPhiPtMjj");                caption.push_back("CR but invert MET cut: SS inverted Mjj-W mass cut; 3l inverted $\\Delta\\phi(\\ell\\ell\\ell,E_\\mathrm{T}^\\mathrm{miss})$, $p_\\mathrm{T}(\\ell\\ell\\ell)$ cut");
+    TFile *f = TFile::Open("rootfiles/newLooper.root");
+    histonames.push_back("SignalRegion");                  caption.push_back("signal region");
+    histonames.push_back("ApplicationRegion");             caption.push_back("application region");
+    histonames.push_back("WZControlRegion");               caption.push_back("lost lepton / 3l-with-Z control region");
+    histonames.push_back("SignalRegionPresel");            caption.push_back("signal region - preselection");
+    histonames.push_back("ApplicationRegionPresel");       caption.push_back("application region - preselection");
+    histonames.push_back("WZControlRegionPresel");         caption.push_back("lost lepton / 3l-with-Z control region - preselection");
 
-    //histonames.push_back("YieldsCR_dropcutsbutNJisotr");                   caption.push_back("CR: add 3rd $\\ell$ forming a Z (SS). Keep only NJ/NB/isotrack");
-    //histonames.push_back("YieldsCR_dropcutsbutNJvetolep");                 caption.push_back("CR: add 3rd $\\ell$ forming a Z (SS); invert SFOS veto (3l). Keep only NJ/NB/vetolep");
-    //histonames.push_back("YieldsCR_dropcutsbutNJ");                        caption.push_back("CR: add 3rd $\\ell$ forming a Z (SS); invert SFOS veto (3l). Keep only NJ/NB/$\\geq$3lep");
-    //histonames.push_back("YieldsCRnoMll_dropcutsbutNJisotr");              caption.push_back("CR: add 3rd $\\ell$ (SS). Keep only NJ/NB/isotrack");
-    //histonames.push_back("YieldsCRnoMll_dropcutsbutNJvetolep");            caption.push_back("CR: add 3rd $\\ell$ (SS). Keep only NJ/NB/vetolep");
-    //histonames.push_back("YieldsCRnoMll_dropcutsbutNJ");                   caption.push_back("CR: add 3rd $\\ell$ (SS). Keep only NJ/NB/$\\geq$3lep");
 
-    histonames.push_back("YieldsSR_jesup");                   caption.push_back("SR - jesUP");
-    histonames.push_back("YieldsSR_jesdown");                 caption.push_back("SR - jesDOWN");
-    histonames.push_back("YieldsCR_dropMjj_jesup");           caption.push_back("CR w/o Mjj-W mass cut - jesUP");
-    histonames.push_back("YieldsCR_dropMjj_jesdown");         caption.push_back("CR w/o Mjj-W mass cut - jesDOWN");
-    histonames.push_back("YieldsCR_using3lorMll_jesup");      caption.push_back("CR - jesUP");
-    histonames.push_back("YieldsCR_using3lorMll_jesdown");    caption.push_back("CR - jesDOWN");
-    histonames.push_back("YieldsCR_dropcutsbutNJ_jesup");     caption.push_back("CR loose - jesUP");
-    histonames.push_back("YieldsCR_dropcutsbutNJ_jesdown");   caption.push_back("CR loose - jesDOWN");
-    histonames.push_back("YieldsSR_preselection");            caption.push_back("SR preselection - veto SR data");
-    //histonames.push_back("YieldsSR_rawweight");                                caption.push_back("SR");
-    //histonames.push_back("YieldsSR_raw");                                      caption.push_back("SR");
-
-    //   TFile *f = TFile::Open("CheckWGrelatedstuff.root");
-    /*
-    histonames.push_back("YieldsSRmumue_0mhits_invertMETDPhiOrPt");        caption.push_back("SRmumue: 0 missing hits");
-    histonames.push_back("YieldsCRmumue_0mhits_invertMETDPhiOrPt");        caption.push_back("CRmumue: 0 missing hits");
-    histonames.push_back("YieldsSRmumue_1mhits_invertMETDPhiOrPt");        caption.push_back("SRmumue: 1 missing hits");
-    histonames.push_back("YieldsCRmumue_1mhits_invertMETDPhiOrPt");        caption.push_back("CRmumue: 1 missing hits");
-    histonames.push_back("YieldsSRmumue_2mhits_invertMETDPhiOrPt");        caption.push_back("SRmumue: 2 missing hits");
-    histonames.push_back("YieldsCRmumue_2mhits_invertMETDPhiOrPt");        caption.push_back("CRmumue: 2 missing hits");
-     */
-    /*
-    histonames.push_back("YieldsSR_lowMSFOS_invertMETDPhiOrPt");                             caption.push_back("SRinverted, added low MSFOS$>$20 GeV cut");
-    histonames.push_back("YieldsSR_lowMSFOS_Mlll_invertMETDPhiOrPt");                        caption.push_back("SRinverted, added low MSFOS$>$20 GeV, Mlll cuts");
-    histonames.push_back("YieldsSR_dRllmin_invertMETDPhiOrPt");                              caption.push_back("SRinverted, add minDeltaR(l,l)>0.2 cut");
-    histonames.push_back("YieldsSR_invertMETDPhiOrPt");                                      caption.push_back("SRinverted");
-    histonames.push_back("YieldsSR_lowMSFOS");                             caption.push_back("SR, added low MSFOS$>$20 GeV cut");
-    histonames.push_back("YieldsSR_lowMSFOS_Mlll");                        caption.push_back("SR, added low MSFOS$>$20 GeV, Mlll cuts");
-    histonames.push_back("YieldsSR_dRllmin");                              caption.push_back("SR, add minDeltaR(l,l)>0.2 cut");
-    histonames.push_back("YieldsSR");                                      caption.push_back("SR");
-    //histonames.push_back("YieldsCR");                                      caption.push_back("CR");
-     */
-    /*
-    histonames.push_back("YieldsSR_tightcharge");                          caption.push_back("SR");
-    histonames.push_back("YieldsCR_tightcharge");                          caption.push_back("CR");
-    histonames.push_back("YieldsSR_nisotrack");                            caption.push_back("SR");
-    histonames.push_back("YieldsCR_nisotrack");                            caption.push_back("CR");
-    histonames.push_back("YieldsSR_nisotrack_tightcharge");                caption.push_back("SR");
-    histonames.push_back("YieldsCR_nisotrack_tightcharge");                caption.push_back("CR");
-    */
-    /*
-    TFile *f = TFile::Open("QuickAndDirtyChecks.root");
-    histonames.push_back("SR");                            caption.push_back("SR");
-    histonames.push_back("SR_Mjjsideband");                caption.push_back("SR - M_{jj} sideband");
-    histonames.push_back("SR_fakesource");                 caption.push_back("SR fake source");
-    histonames.push_back("SR_Mjjsideband_fakesource");     caption.push_back("SR fake source - M_{jj} sideband");
-    histonames.push_back("AR_fakesource");                 caption.push_back("AR fake source");
-    histonames.push_back("AR_Mjjsideband_fakesource");     caption.push_back("AR fake source - M_{jj} sideband");
-    histonames.push_back("SR_presel_fakesource");          caption.push_back("SR preselection - fake source");
-    histonames.push_back("AR_presel_fakesource");          caption.push_back("AR preselection - fake source");
-    */
-    /*
-    TFile *f = TFile::Open("TryAdditionalValidationRegion.root");
-    histonames.push_back("SR_ZplusLep_METle10");                             caption.push_back("SR_ZplusLep_METle10");
-    histonames.push_back("SR_ZplusLep_MTle25OrMTge150");                     caption.push_back("SR_ZplusLep_MTle25OrMTge150");
-    histonames.push_back("SR_ZplusLep_MTle25OrMTge150_METle10");             caption.push_back("SR_ZplusLep_MTle25OrMTge150_METle10");
-    histonames.push_back("AR_ZplusLep_METle10");                             caption.push_back("AR_ZplusLep_METle10");
-    histonames.push_back("AR_ZplusLep_MTle25OrMTge150");                     caption.push_back("AR_ZplusLep_MTle25OrMTge150");
-    histonames.push_back("AR_ZplusLep_MTle25OrMTge150_METle10");             caption.push_back("AR_ZplusLep_MTle25OrMTge150");
-    histonames.push_back("SR_ZplusLep_Mjjsideband_METle10");                 caption.push_back("SR_ZplusLep_Mjjsideband_METle10");
-    histonames.push_back("SR_ZplusLep_Mjjsideband_MTle25OrMTge150");         caption.push_back("SR_ZplusLep_Mjjsideband_MTle25OrMTge150");
-    histonames.push_back("SR_ZplusLep_Mjjsideband_MTle25OrMTge150_METle10"); caption.push_back("SR_ZplusLep_Mjjsideband_MTle25OrMTge150_METle10");
-    histonames.push_back("AR_ZplusLep_Mjjsideband_METle10");                 caption.push_back("AR_ZplusLep_Mjjsideband_METle10");
-    histonames.push_back("AR_ZplusLep_Mjjsideband_MTle25OrMTge150");         caption.push_back("AR_ZplusLep_Mjjsideband_MTle25OrMTge150");
-    histonames.push_back("AR_ZplusLep_Mjjsideband_MTle25OrMTge150_METle10"); caption.push_back("AR_ZplusLep_Mjjsideband_MTle25OrMTge150_METle10");
-    histonames.push_back("SR_2b_presel");                                    caption.push_back("SR_2b_presel");
-    histonames.push_back("SR_2b");                                           caption.push_back("SR_2b");
-    histonames.push_back("AR_2b_presel");                                    caption.push_back("AR_2b_presel");
-    histonames.push_back("AR_2b");                                           caption.push_back("AR_2b");
-    histonames.push_back("SR_2b_Mjjsideband_presel");                        caption.push_back("SR_2b_Mjjsideband_presel");
-    histonames.push_back("SR_2b_Mjjsideband");                               caption.push_back("SR_2b_Mjjsideband");
-    histonames.push_back("AR_2b_Mjjsideband_presel");                        caption.push_back("AR_2b_Mjjsideband_presel");
-    histonames.push_back("AR_2b_Mjjsideband");                               caption.push_back("AR_2b_Mjjsideband");
-    */
     samples.push_back("WWW");
     if(twosig) samples.push_back("WHtoWWW");
     samples.push_back("VVV");
@@ -131,23 +45,7 @@ void makeBigTable(){
     samples.push_back("ZG");
     samples.push_back("Other");
     samples.push_back("bg");
-    /*
-    samples2.push_back("Data");
-    samples2.push_back("trueSS");
-    samples2.push_back("trueWWW");
-    samples2.push_back("true3L");
-    samples2.push_back("SSLL");
-    samples2.push_back("3lLL");
-    samples2.push_back("chargeflips");
-    samples2.push_back("fakes");
-    samples2.push_back("doublefakes");
-    samples2.push_back("photonfakes");
-    samples2.push_back("photondoublefakes");
-    samples2.push_back("photontriplefakes");
-    samples2.push_back("fakesphotonfakes");
-    samples2.push_back("otherphotonfakes");
-    samples2.push_back("others");
-    */
+
     samples2.push_back("Data");
     samples2.push_back("trueSS");
     samples2.push_back("trueWWW");
@@ -172,7 +70,12 @@ void makeBigTable(){
             }
             cout << mapname << endl;
             h[mapname ]=(TH1D*)f->Get(mapname.c_str());
-            //if(samples[s]=="WWW") h[mapname ]->Scale(0.2086);
+            if(s==0&&addsig){
+                string addname = histonames[n] + "_WHtoWWW";
+                if(raw) addname = "Raw" + mapname;
+                h[addname ]=(TH1D*)f->Get(addname.c_str());
+                h[mapname ]->Add(h[addname],1.);
+            }
             for(int b = 0; b<h[mapname]->GetNbinsX();++b){ if(h[mapname]->GetBinContent(b)<0){h[mapname]->SetBinContent(b,0); h[mapname]->SetBinError(b,0); } }
             if(s==2) h[bgname] = (TH1D*)h[mapname]->Clone(bgname.c_str());
             else if(s>2) h[bgname]->Add(h[mapname],1.);

@@ -35,16 +35,23 @@ using namespace tas;
 int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFilePrefix = "test") {
 
   vector<myevt> e;
-  //  addeventtocheck(e,1, 297, 59381);
-  //  addeventtocheck(e,1,3760,751827);
-  //  addeventtocheck(e,1,4965,992630);
-  addeventtocheck(e,276361,248, 475159525);
+  //addeventtocheck(e,276361,248, 475159525);
+
+  bool btagreweighting = false;
+  bool applylepSF = false;
+  float muptmin = 20.1;                           float muptmax = 199.9; float muetamin =  0.01; float muetamax = 2.49;
+  float elptmin = 10.1; float elptminReco = 25.1; float elptmax = 499.9; float eletamin = -2.49; float eletamax = 2.49;
+  TFile *fSF;
+  TH2F *hMu, *hX, *hElReco, *hElID;
+  int SFloaded = -1;
+  if(applylepSF) SFloaded = loadlepSFfile(fSF,hMu,hX,hElReco,hElID,"rootfiles/SF_TnP.root","muSF","","elSF_reco","elSF_ID");
+
   
   // Benchmark
   TBenchmark *bmark = new TBenchmark();
   bmark->Start("benchmark");
 
-  bool storeeventnumbers = true;
+  bool storeeventnumbers = false;
   std::ostringstream*  SREE    ;
   std::ostringstream*  SREM    ;
   std::ostringstream*  SRMM    ;
@@ -171,7 +178,9 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       if(string(currentFile->GetTitle()).find("www_2l_ext1_mia")!=string::npos) weight *= 0.066805*164800./(91900.+164800.);//(208fb/1pb)*BR(WWW—> >=2l)*combineweight
       if(weight>100) cout << weight << " " << currentFile->GetTitle() << endl;
       if(isData()) weight = 1.;
-
+      double rawweight = weight;
+      if(!isData()&&btagreweighting) weight *= weight_btagsf();
+      
       bool checkevent = false;
       for(unsigned int i = 0; i<e.size();++i){
 	if(e[i].run!=tas::run() ) continue;
@@ -199,6 +208,11 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       vector<int> vSS,   v3l,   iSS,   i3l; //lepton indices for both the SS and 3l signal regions
       vector<int> vaSS,  va3l,  iaSS,  ia3l;//loose, but not tight leptons.
       getleptonindices(iSS, i3l, iaSS, ia3l, vSS, v3l, vaSS, va3l);
+      float lepSFSS(1.), lepSFerrSS(1.), lepSF3l(0.), lepSFerr3l(0.);
+      if(applylepSF){
+	lepSFSS = getlepSFWeightandError(lepSFerrSS,iSS,iaSS,hMu,hX,hElReco,hElID, muptmin,muptmax,muetamin,muetamax, muptmin,muptmax,muetamin,muetamax, elptminReco,elptmax,eletamin,eletamax, elptmin,elptmax,eletamin,eletamax);
+	lepSF3l = getlepSFWeightandError(lepSFerr3l,i3l,ia3l,hMu,hX,hElReco,hElID, muptmin,muptmax,muetamin,muetamax, muptmin,muptmax,muetamin,muetamax, elptminReco,elptmax,eletamin,eletamax, elptmin,elptmax,eletamin,eletamax);
+      }
       
       int nvetoSS = vSS.size();
       int nveto3l = v3l.size();
@@ -250,81 +264,81 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       }
 
 
-       float MTmax = -1;
-       if(iSS.size()==2) MTmax = calcMTmax(iSS,MET);
-       else if(iSS.size()==1&&iaSS.size()>=1){
-	 vector<int> temp; temp.push_back(iSS[0]); temp.push_back(iaSS[0]);
-	 MTmax = calcMTmax(temp,MET);
-       }
-       float MTmax3l = calcMTmax(i3l,MET,true);
-       if(checkevent) cout << "MET " << MET.Pt() << " MTmax " << MTmax << " MTmax3l " << MTmax3l << endl;
+      float MTmax = -1;
+      if(iSS.size()==2) MTmax = calcMTmax(iSS,MET);
+      else if(iSS.size()==1&&iaSS.size()>=1){
+	vector<int> temp; temp.push_back(iSS[0]); temp.push_back(iaSS[0]);
+	MTmax = calcMTmax(temp,MET);
+      }
+      float MTmax3l = calcMTmax(i3l,MET,true);
+      if(checkevent) cout << "MET " << MET.Pt() << " MTmax " << MTmax << " MTmax3l " << MTmax3l << endl;
 
-       int SRSS[6]; bool selects3l[6];
-       int SR3l[6];
-       for(int i = 0; i<6; ++i) { SRSS[i] = -1; SR3l[i] = -1; selects3l[i] = false; }
-       //SS
-       //0: SR
-       SRSS[0] = isSRSS(iSS,      vSS,false,MTmax,  nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
-       //1: SR preselect
-       SRSS[1] = isSRSS(iSS,      vSS,true ,MTmax,  nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
-       //2: AR
-       SRSS[2] = isARSS(iSS,iaSS,vaSS,false,MTmax,  nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
-       //3: AR preselect
-       SRSS[3] = isARSS(iSS,iaSS,vaSS,true ,MTmax,  nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
-       //4: CR
-       SRSS[4] = isCRSS(iSS,i3l,  v3l,false,MTmax3l,nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
-       //5: CR preselect
-       SRSS[5] = isCRSS(iSS,i3l,  v3l,true ,MTmax3l,nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
-       selects3l[4] = true; selects3l[5] = true;
-       //3l
-       //0: SR, 4: CR
-       checkbothSRCR3l(SR3l[0],SR3l[4],i3l,false,nj,nb);
-       //1: SR preselect, 5: CR preselect
-       checkbothSRCR3l(SR3l[1],SR3l[5],i3l,true ,nj,nb);
-       //2: AR
-       SR3l[2] = isAR3l(i3l,ia3l,false,nj,nb);
-       //3: AR preselect
-       SR3l[3] = isAR3l(i3l,ia3l,true ,nj,nb);
+      int SRSS[6]; bool selects3l[6];
+      int SR3l[6];
+      for(int i = 0; i<6; ++i) { SRSS[i] = -1; SR3l[i] = -1; selects3l[i] = false; }
+      //SS
+      //0: SR
+      SRSS[0] = isSRSS(iSS,      vSS,false,MTmax,  nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
+      //1: SR preselect
+      SRSS[1] = isSRSS(iSS,      vSS,true ,MTmax,  nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
+      //2: AR
+      SRSS[2] = isARSS(iSS,iaSS,vaSS,false,MTmax,  nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
+      //3: AR preselect
+      SRSS[3] = isARSS(iSS,iaSS,vaSS,true ,MTmax,  nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
+      //4: CR
+      SRSS[4] = isCRSS(iSS,i3l,  v3l,false,MTmax3l,nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
+      //5: CR preselect
+      SRSS[5] = isCRSS(iSS,i3l,  v3l,true ,MTmax3l,nj30,nb,Mjj,MjjL,Detajj);//enter variables for quicker calculation
+      selects3l[4] = true; selects3l[5] = true;
+      //3l
+      //0: SR, 4: CR
+      checkbothSRCR3l(SR3l[0],SR3l[4],i3l,false,nj,nb);
+      //1: SR preselect, 5: CR preselect
+      checkbothSRCR3l(SR3l[1],SR3l[5],i3l,true ,nj,nb);
+      //2: AR
+      SR3l[2] = isAR3l(i3l,ia3l,false,nj,nb);
+      //3: AR preselect
+      SR3l[3] = isAR3l(i3l,ia3l,true ,nj,nb);
 
-       if(!isData()){//SR is blinded
-	 fillSRhisto(histos, "SignalRegionPrecleaning",       sn, sn2, SRSS[0], SR3l[0], weight, weight);
-	 fillSRhisto(histos, "SignalRegionPreselPrecleaning", sn, sn2, SRSS[1], SR3l[1], weight, weight);
-       }
-       fillSRhisto(histos, "ApplicationRegionPrecleaning",       sn, sn2, SRSS[2], SR3l[2], weight, weight);
-       fillSRhisto(histos, "ApplicationRegionPreselPrecleaning", sn, sn2, SRSS[3], SR3l[3], weight, weight);
-       fillSRhisto(histos, "WZControlRegionPrecleaning",         sn2,sn2, SRSS[4], SR3l[4], weight, weight);
-       fillSRhisto(histos, "WZControlRegionPreselPrecleaning",   sn2,sn2, SRSS[5], SR3l[5], weight, weight);
-
-
-       if(checkevent) cout << "passed       SRSS " << SRSS[0] << " SR3l " << SR3l[0] << " ARSS " << SRSS[2] << " AR3l " << SR3l[2] << " CRSS " << SRSS[4] << " CR3l " << SR3l[4] << endl;
-       //if(SRSS[2]==0) cout << __LINE__ << endl;
-       for(int i = 0; i<6; ++i) {
-	 if(!selects3l[i]){
-	   if(vetophotonprocess(fname,isphotonSS))    { SRSS[i] = -1; }
-	 }
-	 else if(vetophotonprocess(fname,isphoton3l)){ SRSS[i] = -1; }
-	 if(vetophotonprocess(fname,isphoton3l))     { SR3l[i] = -1; }
-       }
-       if(checkevent) cout << "photonpassed SRSS " << SRSS[0] << " SR3l " << SR3l[0] << " ARSS " << SRSS[2] << " AR3l " << SR3l[2] << " CRSS " << SRSS[4] << " CR3l " << SR3l[4] << endl;
+      if(!isData()){//SR is blinded
+	fillSRhisto(histos, "SignalRegionPrecleaning",       sn, sn2, SRSS[0], SR3l[0], weight*lepSFSS, weight*lepSF3l);
+	fillSRhisto(histos, "SignalRegionPreselPrecleaning", sn, sn2, SRSS[1], SR3l[1], weight*lepSFSS, weight*lepSF3l);
+      }
+      fillSRhisto(histos, "ApplicationRegionPrecleaning",       sn, sn2, SRSS[2], SR3l[2], weight*lepSFSS, weight*lepSF3l);
+      fillSRhisto(histos, "ApplicationRegionPreselPrecleaning", sn, sn2, SRSS[3], SR3l[3], weight*lepSFSS, weight*lepSF3l);
+      fillSRhisto(histos, "WZControlRegionPrecleaning",         sn2,sn2, SRSS[4], SR3l[4], weight*lepSFSS, weight*lepSF3l);
+      fillSRhisto(histos, "WZControlRegionPreselPrecleaning",   sn2,sn2, SRSS[5], SR3l[5], weight*lepSFSS, weight*lepSF3l);
 
 
-       if(!isData()){//SR is blinded
-	 fillSRhisto(histos, "SignalRegion",       sn, sn2, SRSS[0], SR3l[0], weight, weight);
-	 fillSRhisto(histos, "SignalRegionPresel", sn, sn2, SRSS[1], SR3l[1], weight, weight);
-       }
-       fillSRhisto(histos, "ApplicationRegion",       sn, sn2, SRSS[2], SR3l[2], weight, weight);
-       fillSRhisto(histos, "ApplicationRegionPresel", sn, sn2, SRSS[3], SR3l[3], weight, weight);
-       fillSRhisto(histos, "WZControlRegion",         sn2,sn2, SRSS[4], SR3l[4], weight, weight);
-       fillSRhisto(histos, "WZControlRegionPresel",   sn2,sn2, SRSS[5], SR3l[5], weight, weight);
+      if(checkevent) cout << "passed       SRSS " << SRSS[0] << " SR3l " << SR3l[0] << " ARSS " << SRSS[2] << " AR3l " << SR3l[2] << " CRSS " << SRSS[4] << " CR3l " << SR3l[4] << endl;
+      //if(SRSS[2]==0) cout << __LINE__ << endl;
+      for(int i = 0; i<6; ++i) {
+	if(!selects3l[i]){
+	  if(vetophotonprocess(fname,isphotonSS))    { SRSS[i] = -1; }
+	}
+	else if(vetophotonprocess(fname,isphoton3l)){ SRSS[i] = -1; }
+	if(vetophotonprocess(fname,isphoton3l))     { SR3l[i] = -1; }
+      }
+      if(checkevent) cout << "photonpassed SRSS " << SRSS[0] << " SR3l " << SR3l[0] << " ARSS " << SRSS[2] << " AR3l " << SR3l[2] << " CRSS " << SRSS[4] << " CR3l " << SR3l[4] << endl;
 
-       if(!isData()){//SR is blinded
-	 fillSRhisto(histos, "RawSignalRegion",       sn, sn2, SRSS[0], SR3l[0], 1., 1.);
-	 fillSRhisto(histos, "RawSignalRegionPresel", sn, sn2, SRSS[1], SR3l[1], 1., 1.);
-       }
-       fillSRhisto(histos, "RawApplicationRegion",       sn, sn2, SRSS[2], SR3l[2], 1., 1.);
-       fillSRhisto(histos, "RawApplicationRegionPresel", sn, sn2, SRSS[3], SR3l[3], 1., 1.);
-       fillSRhisto(histos, "RawWZControlRegion",         sn2,sn2, SRSS[4], SR3l[4], 1., 1.);
-       fillSRhisto(histos, "RawWZControlRegionPresel",   sn2,sn2, SRSS[5], SR3l[5], 1., 1.);
+
+      if(!isData()){//SR is blinded
+	fillSRhisto(histos, "SignalRegion",       sn, sn2, SRSS[0], SR3l[0], weight*lepSFSS, weight*lepSF3l);
+	fillSRhisto(histos, "SignalRegionPresel", sn, sn2, SRSS[1], SR3l[1], weight*lepSFSS, weight*lepSF3l);
+      }
+      fillSRhisto(histos, "ApplicationRegion",       sn, sn2, SRSS[2], SR3l[2], weight*lepSFSS, weight*lepSF3l);
+      fillSRhisto(histos, "ApplicationRegionPresel", sn, sn2, SRSS[3], SR3l[3], weight*lepSFSS, weight*lepSF3l);
+      fillSRhisto(histos, "WZControlRegion",         sn2,sn2, SRSS[4], SR3l[4], weight*lepSFSS, weight*lepSF3l);
+      fillSRhisto(histos, "WZControlRegionPresel",   sn2,sn2, SRSS[5], SR3l[5], weight*lepSFSS, weight*lepSF3l);
+
+      if(!isData()){//SR is blinded
+	fillSRhisto(histos, "RawSignalRegion",       sn, sn2, SRSS[0], SR3l[0], 1., 1.);
+	fillSRhisto(histos, "RawSignalRegionPresel", sn, sn2, SRSS[1], SR3l[1], 1., 1.);
+      }
+      fillSRhisto(histos, "RawApplicationRegion",       sn, sn2, SRSS[2], SR3l[2], 1., 1.);
+      fillSRhisto(histos, "RawApplicationRegionPresel", sn, sn2, SRSS[3], SR3l[3], 1., 1.);
+      fillSRhisto(histos, "RawWZControlRegion",         sn2,sn2, SRSS[4], SR3l[4], 1., 1.);
+      fillSRhisto(histos, "RawWZControlRegionPresel",   sn2,sn2, SRSS[5], SR3l[5], 1., 1.);
 
       if(storeeventnumbers){
 	addeventtolist(SRSS[0], SR3l[0], SREE, SREM, SRMM, SR0SFOS, SR1SFOS, SR2SFOS);
@@ -352,7 +366,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
     storeeventlist("data/CR", skimFilePrefix, CREE, CREM, CRMM, CR0SFOS, CR1SFOS, CR2SFOS);
   }
   
-  //SaveHistosToFile("rootfiles/newLooper.root",histos,true,true);
+  SaveHistosToFile("rootfiles/newLooper.root",histos,true,true);
   //SaveHistosToFile("testlogs/testV2.root",histos,true,true);
 
   // return
@@ -365,4 +379,4 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
   cout << endl;
   delete bmark;
   return 0;
-  }
+}
