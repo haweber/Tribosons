@@ -209,8 +209,8 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       if(string(currentFile->GetTitle()).find("dy_m50_mgmlm_ext1_")!=string::npos){
 	if(gen_ht()>100) continue;
       }
-      if(string(currentFile->GetTitle()).find("www_2l_mia")!=string::npos)      weight *= 0.066805* 91900./(91900.+164800.);//(208fb/1pb)*BR(WWW—> >=2l)*combineweight
-      if(string(currentFile->GetTitle()).find("www_2l_ext1_mia")!=string::npos) weight *= 0.066805*164800./(91900.+164800.);//(208fb/1pb)*BR(WWW—> >=2l)*combineweight
+      //if(string(currentFile->GetTitle()).find("www_2l_mia")!=string::npos)      weight *= 0.066805* 91900./(91900.+164800.);//(208fb/1pb)*BR(WWW—> >=2l)*combineweight
+      //if(string(currentFile->GetTitle()).find("www_2l_ext1_mia")!=string::npos) weight *= 0.066805*164800./(91900.+164800.);//(208fb/1pb)*BR(WWW—> >=2l)*combineweight
       if(weight>100) cout << weight << " " << currentFile->GetTitle() << endl;
       if(isData()) weight = 1.;
       double rawweight = weight;
@@ -484,7 +484,7 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       if(checkevent) cout << "passed          SRSS " << SRSS[ 0] << " SR3l " << SR3l[ 0] << " ARSS " << SRSS[ 2] << " AR3l " << SR3l[ 2] << " CRSS " << SRSS[ 4] << " CR3l " << SR3l[ 4] << endl;
       if(checkevent) cout << "passedold       SRSS " << SRSS[10] << " SR3l " << SR3l[10] << " ARSS " << SRSS[12] << " AR3l " << SR3l[12] << " CRSS " << SRSS[14] << " CR3l " << SR3l[14] << endl;
       for(int i = 0; i<10; ++i) {
-	if(vetophotonprocess(fname,isphoton))    { SRSS[i] = -1; SR3l[i] = -1; }
+	if(vetophoton())    { SRSS[i] = -1; SR3l[i] = -1; }
       }
       for(int i = 10; i<20; ++i) {
 	if(!selects3l[i]){

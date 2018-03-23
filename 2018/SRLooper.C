@@ -173,8 +173,8 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 
       if(string(currentFile->GetTitle()).find("wjets_incl_mgmlm_") !=string::npos && gen_ht()>100.) continue;
       if(string(currentFile->GetTitle()).find("dy_m50_mgmlm_ext1_")!=string::npos && gen_ht()>100.) continue;
-      if(string(currentFile->GetTitle()).find("www_2l_mia")        !=string::npos) weight *= 0.066805* 91900./(91900.+164800.);//(208fb/1pb)*BR(WWW—> >=2l)*combineweight
-      if(string(currentFile->GetTitle()).find("www_2l_ext1_mia")   !=string::npos) weight *= 0.066805*164800./(91900.+164800.);//(208fb/1pb)*BR(WWW—> >=2l)*combineweight
+      //if(string(currentFile->GetTitle()).find("www_2l_mia")        !=string::npos) weight *= 0.066805* 91900./(91900.+164800.);//(208fb/1pb)*BR(WWW—> >=2l)*combineweight
+      //if(string(currentFile->GetTitle()).find("www_2l_ext1_mia")   !=string::npos) weight *= 0.066805*164800./(91900.+164800.);//(208fb/1pb)*BR(WWW—> >=2l)*combineweight
       if(isData()) weight = 1.;
       //double rawweight = weight;
       if(!isData()&&btagreweighting) weight *= weight_btagsf();
@@ -223,29 +223,22 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       string sample   = skimFilePrefix;
       if(splitVH(fname)){ sample = "WHtoWWW"; }
       string sn = string(bkgtype().Data());
-      bool   isphoton = (sn =="photonfakes");
       
-      int SRSS[20]; bool selects3l[20];
+      int SRSS[20]; 
       int SR3l[20];
-      for(int i = 0; i<20; ++i) { SRSS[i] = -1; SR3l[i] = -1; selects3l[i] = false; }
+      for(int i = 0; i<20; ++i) { SRSS[i] = -1; SR3l[i] = -1;  }
 
       //SS
       passAnySS(SRSS[0],SRSS[2],SRSS[4]);      //full:         0: SR, 2: AR, 4: CR
       passAnySS(SRSS[1],SRSS[3],SRSS[5],true); //preselection: 1: SR, 3: AR, 5: CR
       if(getJECunc) SRSS[6] = isSRSS(false, 1);//6: SR JEC up
       if(getJECunc) SRSS[7] = isSRSS(false,-1);//7: SR JEC dn
-      selects3l[4] = true;
-      selects3l[5] = true;
       //3l
       passAny3l(SR3l[0],SR3l[2],SR3l[4]);      //full:         0: SR, 2: AR, 4: CR
       passAny3l(SR3l[1],SR3l[3],SR3l[5],true); //preselection: 1: SR, 3: AR, 5: CR
       if(getJECunc) SR3l[6] = isSR3l(false, 1);//6: SR JEC up
       if(getJECunc) SR3l[7] = isSR3l(false,-1);//7: SR JEC dn
-     
-      if(checkevent) cout << "passed          SRSS " << SRSS[ 0] << " SR3l " << SR3l[ 0] << " ARSS " << SRSS[ 2] << " AR3l " << SR3l[ 2] << " CRSS " << SRSS[ 4] << " CR3l " << SR3l[ 4] << endl;
-      for(int i = 0; i<20; ++i) if(vetophotonprocess(fname,isphoton))    { SRSS[i] = -1; SR3l[i] = -1; }
-
-      if(checkevent) cout << "photonpassed    SRSS " << SRSS[ 0] << " SR3l " << SR3l[ 0] << " ARSS " << SRSS[ 2] << " AR3l " << SR3l[ 2] << " CRSS " << SRSS[ 4] << " CR3l " << SR3l[ 4] << endl;
+      if(vetophoton()) continue;
 
       if(!isData()||!blindSR){//SR is blinded
 	fillSRhisto(histos, "SignalRegion",               sample, sn, sn, SRSS[0], SR3l[0], weight, weight);

@@ -103,6 +103,7 @@ int    isAR3l_v0(vector<int> tightlep, vector<int> looselep,               bool 
 int    isCR3l_v0(vector<int> tightlep,                                     bool preselect=false, int nj=-1, int nb=-1, LorentzVector MET = LorentzVector(0,0,0,0), int jec=0, bool btag=false, int version=0);
 bool    checkbothSRCR3l_v0(int &isSR3l, int &isCR3l, vector<int> tightlep, bool preselect=false, int nj=-1, int nb=-1, LorentzVector MET = LorentzVector(0,0,0,0), int jec=0, bool btag=false, int version=0);
 vector<float> allMSFOS(vector<int> tightlep, vector<int> looselep={});
+vector<float> allMSFOS();
 int    isSR3l(                              bool preselect=false, int jec=0, bool btag=false, int version=1);
 int    isAR3l(                              bool preselect=false, int jec=0, bool btag=false, int version=1);
 int    isCR3l(                              bool preselect=false, int jec=0, bool btag=false, int version=1);

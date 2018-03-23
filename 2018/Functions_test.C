@@ -776,39 +776,39 @@ bool passJetSSstate(bool preselect, bool is3lCR, int jec, bool btag, bool Mjjsid
     float masswindow = 20.;
     if(abs(version)==1) masswindow = 15.;
     if(jec==1){
-    if(nj30_up()<2)                              return false;
-    if( btag&&nb_up()==0)                        return false;
-    if(!btag&&nb_up()>0)                         return false;
-    if(preselect)                              return true;
-    if(fabs(DetajjL_up())>1.5)                   return false;
-    if(fabs(MjjL_up())>400.)                     return false;
-    if(is3lCR)                                 return true;
-    if( Mjjside&&fabs(Mjj_up()-80.) <masswindow) return false;
-    if(!Mjjside&&fabs(Mjj_up()-80.)>=masswindow) return false;
-    return true;
-  } else if(jec==(-1)){
-    if(nj30_dn()<2)                              return false;
-    if( btag&&nb_dn()==0)                        return false;
-    if(!btag&&nb_dn()>0)                         return false;
-    if(preselect)                              return true;
-    if(fabs(DetajjL_dn())>1.5)                   return false;
-    if(fabs(MjjL_dn())>400.)                     return false;
-    if(is3lCR)                                 return true;
-    if( Mjjside&&fabs(Mjj_dn()-80.) <masswindow) return false;
-    if(!Mjjside&&fabs(Mjj_dn()-80.)>=masswindow) return false;
-    return true;
-  } else {
-    if(nj30()<2)                              return false;
-    if( btag&&nb()==0)                        return false;
-    if(!btag&&nb()>0)                         return false;
-    if(preselect)                           return true;
-    if(fabs(DetajjL())>1.5)                   return false;
-    if(fabs(MjjL())>400.)                     return false;
-    if(is3lCR)                              return true;
-    if( Mjjside&&fabs(Mjj()-80.) <masswindow) return false;
-    if(!Mjjside&&fabs(Mjj()-80.)>=masswindow) return false;
-    return true;
-  }
+      if(nj30_up()<2)                              return false;
+      if( btag&&nb_up()==0)                        return false;
+      if(!btag&&nb_up()>0)                         return false;
+      if(preselect)                              return true;
+      if(fabs(DetajjL_up())>1.5)                   return false;
+      if(fabs(MjjL_up())>400.)                     return false;
+      if(is3lCR)                                 return true;
+      if( Mjjside&&fabs(Mjj_up()-80.) <masswindow) return false;
+      if(!Mjjside&&fabs(Mjj_up()-80.)>=masswindow) return false;
+      return true;
+    } else if(jec==(-1)){
+      if(nj30_dn()<2)                              return false;
+      if( btag&&nb_dn()==0)                        return false;
+      if(!btag&&nb_dn()>0)                         return false;
+      if(preselect)                              return true;
+      if(fabs(DetajjL_dn())>1.5)                   return false;
+      if(fabs(MjjL_dn())>400.)                     return false;
+      if(is3lCR)                                 return true;
+      if( Mjjside&&fabs(Mjj_dn()-80.) <masswindow) return false;
+      if(!Mjjside&&fabs(Mjj_dn()-80.)>=masswindow) return false;
+      return true;
+    } else {
+      if(nj30()<2)                              return false;
+      if( btag&&nb()==0)                        return false;
+      if(!btag&&nb()>0)                         return false;
+      if(preselect)                           return true;
+      if(fabs(DetajjL())>1.5)                   return false;
+      if(fabs(MjjL())>400.)                     return false;
+      if(is3lCR)                              return true;
+      if( Mjjside&&fabs(Mjj()-80.) <masswindow) return false;
+      if(!Mjjside&&fabs(Mjj()-80.)>=masswindow) return false;
+      return true;
+    }
   return false;//should not happen
 }
 
@@ -884,7 +884,7 @@ int isCRSS(bool preselect, int jec, bool noZ, bool btag, bool Mjjside, int versi
     bool hasSFOS = false;
     if((lep_pdgId()[SS1]==(-lep_pdgId()[lep3]))) hasSFOS = true;
     if((lep_pdgId()[SS2]==(-lep_pdgId()[lep3]))) hasSFOS = true;
-    if(!hasSFOS)  return -1;
+   if(!hasSFOS)  return -1;
   }
   if(preselect){
     if(passSSee() && fabs(MeeSS()-MZ)>10.)         return  0;
@@ -907,6 +907,7 @@ bool passAnySS(int &SR, int &AR, int &CR, bool preselect, int jec, bool noZ, boo
   bool changeSR = (NtightSS()==2                  && nVlep()==2);  
   bool changeAR = (NtightSS()==1 && NlooseSS()==2 && nVlep()==2);  
   bool changeCR = (NtightSS()>=2 && Ntight3l()==3 && nVlep()==3);
+  bool mychange = changeSR;
   if(nisoTrack_mt2_cleaned_VVV_cutbased_veto()!=0) return true;
   if(!passJetSSstate(preselect, true, jec, btag, Mjjside,version)) return true;//don't pass any selection
   if(!passJetSSstate(preselect, false, jec, btag, Mjjside,version)) { changeSR = false; changeAR = false; }
@@ -1654,6 +1655,14 @@ vector<float> allMSFOS(vector<int> tightlep, vector<int> looselep){
       MSFOS.push_back((lep_p4()[l[i] ]+lep_p4()[l[j] ]).M());
     }
   }
+  sort(MSFOS.begin(),MSFOS.end(),sortMSFOS);
+  return MSFOS;
+}
+vector<float> allMSFOS(){
+  vector<float> MSFOS;
+  if(isSFOS01()==1) MSFOS.push_back(M01());
+  if(isSFOS02()==1) MSFOS.push_back(M02());
+  if(isSFOS12()==1) MSFOS.push_back(M12());
   sort(MSFOS.begin(),MSFOS.end(),sortMSFOS);
   return MSFOS;
 }
