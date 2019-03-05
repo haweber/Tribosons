@@ -43,16 +43,68 @@
 using namespace std;
 using namespace tas;
 
+//https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetResolution#Smearing_procedures
+float JERSF(float eta, int year=-1){
+  if(year==2017){
+    return 0;
+  }
+  else {
+    if(fabs(eta)<0.552) return 1.1595;
+    if(fabs(eta)<0.783) return 1.1948;
+    if(fabs(eta)<1.131) return 1.1464;
+    if(fabs(eta)<1.305) return 1.1609;
+    if(fabs(eta)<1.740) return 1.1278;
+    if(fabs(eta)<1.930) return 1.1000;
+    if(fabs(eta)<2.043) return 1.1426;
+    if(fabs(eta)<2.322) return 1.1512;
+    if(fabs(eta)<2.500) return 1.2963;
+    if(fabs(eta)<2.853) return 1.3418;
+    if(fabs(eta)<2.964) return 1.7788;
+    if(fabs(eta)<3.139) return 1.1869;
+    if(fabs(eta)<5.191) return 1.1922;
+  }
+  return -1;
+}
+float JERunc(float eta, int year=-1){
+  if(year==2017){
+    return 0;
+  }
+  else {
+    if(fabs(eta)<0.552) return 0.0645;
+    if(fabs(eta)<0.783) return 0.0652;
+    if(fabs(eta)<1.131) return 0.0632;
+    if(fabs(eta)<1.305) return 0.1025;
+    if(fabs(eta)<1.740) return 0.0986;
+    if(fabs(eta)<1.930) return 0.1079;
+    if(fabs(eta)<2.043) return 0.1214;
+    if(fabs(eta)<2.322) return 0.1140;
+    if(fabs(eta)<2.500) return 0.2371;
+    if(fabs(eta)<2.853) return 0.2091;
+    if(fabs(eta)<2.964) return 0.2008;
+    if(fabs(eta)<3.139) return 0.1243;
+    if(fabs(eta)<5.191) return 0.1488;
+  }
+  return -1;
+}
+float jetscale(float eta, int year=-1){
+  float SF  = JERSF( eta,year);
+  float unc = JERunc(eta,year);
+  TRandom3 *rgen_ = new TRandom3();
+  rgen_->SetSeed(123456);
+
+
+  delete rgen_;
+  return 1.+rgen_->Gaus(0.,unc
+
 int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFilePrefix = "test", int chainnumber=1, int year=-1) {
 
   vector<myevt> e;
-  addeventtocheck(e, 278315,  558, 924539872);
-  //addeventtocheck(e, 274971,  241, 368840964);
-  //addeventtocheck(e, 283877, 1272, 2229337525);
-  //addeventtocheck(e, 283059,   43, 76595225);
-  //addeventtocheck(e, 283308,  384, 738858987);
-  //addeventtocheck(e, 283934,  970, 1680056919);
-  //addeventtocheck(e, 283478,  688, 1052704922);
+  addeventtocheck(e, 274971,  241, 368840964);
+  addeventtocheck(e, 283877, 1272, 2229337525);
+  addeventtocheck(e, 283059,   43, 76595225);
+  addeventtocheck(e, 283308,  384, 738858987);
+  addeventtocheck(e, 283934,  970, 1680056919);
+  addeventtocheck(e, 283478,  688, 1052704922);
 
 
   bool blindSR         = false;
@@ -455,7 +507,6 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
       if(!isData()||!blindSR){//SR is blinded
         if(SRf>=0) fillhisto(histos, "NewSignalRegion",               sample, sn, SRf, weight);
         if(SRp>=0) fillhisto(histos, "NewSignalRegionPreselection",   sample, sn, SRp, weight);
-        if(SRf>=0&&isData()){ cout << "SR " << SRf << " run:lumi:evt " << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl; }
         int SR3lv2S = SR3l[0];
         if(SR3l[0]==0 && maxMT<90.) SR3lv2S = -1;
         fillSRhisto(histos, "SignalRegion",               sample, sn, SRSS[0], SR3l[0], weight);

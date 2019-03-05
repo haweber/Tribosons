@@ -46,13 +46,12 @@ using namespace tas;
 int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFilePrefix = "test", int chainnumber=1, int year=-1) {
 
   vector<myevt> e;
-  addeventtocheck(e, 278315,  558, 924539872);
-  //addeventtocheck(e, 274971,  241, 368840964);
-  //addeventtocheck(e, 283877, 1272, 2229337525);
-  //addeventtocheck(e, 283059,   43, 76595225);
-  //addeventtocheck(e, 283308,  384, 738858987);
-  //addeventtocheck(e, 283934,  970, 1680056919);
-  //addeventtocheck(e, 283478,  688, 1052704922);
+  addeventtocheck(e, 274971,  241, 368840964);
+  addeventtocheck(e, 283877, 1272, 2229337525);
+  addeventtocheck(e, 283059,   43, 76595225);
+  addeventtocheck(e, 283308,  384, 738858987);
+  addeventtocheck(e, 283934,  970, 1680056919);
+  addeventtocheck(e, 283478,  688, 1052704922);
 
 
   bool blindSR         = false;
@@ -148,6 +147,11 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
   histonames.push_back("NewLLControlRegionPreselection");         hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
   histonames.push_back("NewApplicationRegion");                   hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
   histonames.push_back("NewApplicationRegionPreselection");       hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+
+  histonames.push_back("NewSignalRegion_LLoutaccept");                     hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewSignalRegionPreselection_LLoutaccept");         hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewSignalRegion_LLaccept");                        hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewSignalRegionPreselection_LLaccept");            hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
 
   
   histonames.push_back("SignalRegionTightIso3lv1");                        hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS all tight
@@ -451,11 +455,96 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
 
       }
 
+      bool plotthisgen = false;
+      bool allgenlepInAcc = false;
+      int Ngen = 0;
+      int genlep1 = -1;//W
+      int genlep2 = -1;//Z +
+      int genlep3 = -1;//Z -
+      bool genlep1match = false;//W
+      bool genlep2match = false;//Z +
+      bool genlep3match = false;//Z -
+      for(unsigned int i = 0; i<genPart_p4().size();++i){
+        if(abs(genPart_pdgId()[i])!= 11 && abs(genPart_pdgId()[i])!=13) continue;
+        //if(abs(genPart_motherId()[i])!= 15 && abs(genPart_motherId()[i])!=24 && abs(genPart_motherId()[i])!=23) continue;
+        if(abs(genPart_motherId()[i])!=24 && abs(genPart_motherId()[i])!=23) continue;
+        //if(abs(genPart_motherId()[i])== 15 || abs(genPart_motherId()[i])==24){
+        if(abs(genPart_motherId()[i])==24){
+          //genlep1 found
+          ++Ngen;
+          genlep1 = i;
+          for(unsigned int j = 0; j<lep_pdgId().size();++j){
+            if(SRp>=6){
+              continue;
+            } else if(SRp>=0){
+              if(genPart_pdgId()[i]!=lep_pdgId()[j]) continue;
+              if(dR(genPart_p4()[i],lep_p4()[j])>0.1) continue;
+              //genlep1 matched
+              genlep1match = true;
+              break;
+            }
+          }
+        }//W+/-
+        if(abs(genPart_motherId()[i])==23&&genPart_pdgId()[i]>0){
+          //genlep2 found
+          ++Ngen;
+          genlep2 = i;
+          for(unsigned int j = 0; j<lep_pdgId().size();++j){
+            if(SRp>=6){
+              continue;
+            } else if(SRp>=0){
+              if(genPart_pdgId()[i]!=lep_pdgId()[j]) continue;
+              if(dR(genPart_p4()[i],lep_p4()[j])>0.1) continue;
+              //genlep2 matched
+              genlep2match = true;
+              break;
+            }
+          }
+        }//Z+
+        if(abs(genPart_motherId()[i])==23&&genPart_pdgId()[i]<0){
+          //genlep3 found
+          ++Ngen;
+          genlep3 = i;
+          for(unsigned int j = 0; j<lep_pdgId().size();++j){
+            if(SRp>=6){
+              continue;
+            } else if(SRp>=0){
+              if(genPart_pdgId()[i]!=lep_pdgId()[j]) continue;
+              if(dR(genPart_p4()[i],lep_p4()[j])>0.1) continue;
+              //genlep3 matched
+              genlep3match = true;
+              break;
+            }
+          }
+        }//Z-
+      }
+      int Nmatch = 0;
+      if(genlep1match) ++Nmatch;
+      if(genlep2match) ++Nmatch;
+      if(genlep3match) ++Nmatch;
+      if(Ngen>3) cout << "Why do we have more than three true leptons" << endl;
+      if(Ngen==3 && Nmatch==2){
+        //this is with one lost lepton
+        plotthisgen = true;
+        if(genlep1match&&genlep2match){ if(genPart_p4()[genlep3].Pt()>10. && fabs(genPart_p4()[genlep3].Eta())<2.4) allgenlepInAcc = true; }
+        if(genlep1match&&genlep3match){ if(genPart_p4()[genlep2].Pt()>10. && fabs(genPart_p4()[genlep2].Eta())<2.4) allgenlepInAcc = true; }
+        if(genlep2match&&genlep3match){ if(genPart_p4()[genlep1].Pt()>10. && fabs(genPart_p4()[genlep1].Eta())<2.4) allgenlepInAcc = true; }
+      }
+
+      if(plotthisgen){
+        if(allgenlepInAcc){
+          if(SRf>=0) fillhisto(histos, "NewSignalRegion_LLaccept",               sample, sn, SRf, weight);
+          if(SRp>=0) fillhisto(histos, "NewSignalRegionPreselection_LLaccept",   sample, sn, SRp, weight);
+        } else {
+          if(SRf>=0) fillhisto(histos, "NewSignalRegion_LLoutaccept",               sample, sn, SRf, weight);
+          if(SRp>=0) fillhisto(histos, "NewSignalRegionPreselection_LLoutaccept",   sample, sn, SRp, weight);
+
+        }
+      }
       
       if(!isData()||!blindSR){//SR is blinded
         if(SRf>=0) fillhisto(histos, "NewSignalRegion",               sample, sn, SRf, weight);
         if(SRp>=0) fillhisto(histos, "NewSignalRegionPreselection",   sample, sn, SRp, weight);
-        if(SRf>=0&&isData()){ cout << "SR " << SRf << " run:lumi:evt " << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl; }
         int SR3lv2S = SR3l[0];
         if(SR3l[0]==0 && maxMT<90.) SR3lv2S = -1;
         fillSRhisto(histos, "SignalRegion",               sample, sn, SRSS[0], SR3l[0], weight);
@@ -573,9 +662,9 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
     storeeventlist("data/ARsb", skimFilePrefix, AREEsb, AREMsb, ARMMsb, dummy4, dummy5, dummy6);
   }
 
-  if(year==2016)      SaveHistosToFile("rootfiles/SRLooper_2016.root",histos,true,true,(chainnumber==0));
-  else if(year==2017) SaveHistosToFile("rootfiles/SRLooper_2017.root",histos,true,true,(chainnumber==0));
-  else                SaveHistosToFile("rootfiles/SRLooper.root",histos,true,true,(chainnumber==0));
+  if(year==2016)      SaveHistosToFile("rootfiles/SRLooper_LLfrac_2016.root",histos,true,true,(chainnumber==0));
+  else if(year==2017) SaveHistosToFile("rootfiles/SRLooper_LLfrac_2017.root",histos,true,true,(chainnumber==0));
+  else                SaveHistosToFile("rootfiles/SRLooper_LLfrac.root",histos,true,true,(chainnumber==0));
   deleteHistograms(histos);
   
   // return

@@ -45,22 +45,32 @@ using namespace tas;
 
 int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFilePrefix = "test", int chainnumber=1, int year=-1) {
 
+  TFile *fphot;
+  TFile *fjet;
+  TFile *femjet;
+  if(year==2016) fphot  = TFile::Open("/home/users/haweber/L1prefiring_photonpt_2016BtoH.root");
+  if(year==2016) fjet   = TFile::Open("/home/users/haweber/L1prefiring_jetpt_2016BtoH.root");
+  if(year==2016) femjet = TFile::Open("/home/users/haweber/L1prefiring_jetempt_2016BtoH.root");
+  TH2F* hphot  = (TH2F*)fphot ->Get("L1prefiring_photonpt_2016BtoH");
+  TH2F* hjet   = (TH2F*)fjet  ->Get("L1prefiring_jetpt_2016BtoH");
+  TH2F* hemjet = (TH2F*)femjet->Get("L1prefiring_jetempt_2016BtoH");
+  
+
   vector<myevt> e;
-  addeventtocheck(e, 278315,  558, 924539872);
-  //addeventtocheck(e, 274971,  241, 368840964);
-  //addeventtocheck(e, 283877, 1272, 2229337525);
-  //addeventtocheck(e, 283059,   43, 76595225);
-  //addeventtocheck(e, 283308,  384, 738858987);
-  //addeventtocheck(e, 283934,  970, 1680056919);
-  //addeventtocheck(e, 283478,  688, 1052704922);
+  addeventtocheck(e, 274971,  241, 368840964);
+  addeventtocheck(e, 283877, 1272, 2229337525);
+  addeventtocheck(e, 283059,   43, 76595225);
+  addeventtocheck(e, 283308,  384, 738858987);
+  addeventtocheck(e, 283934,  970, 1680056919);
+  addeventtocheck(e, 283478,  688, 1052704922);
 
 
   bool blindSR         = false;
-  bool btagreweighting = true;
-  bool applylepSF      = true;
-  bool applytrigSF     = true;
+  bool btagreweighting = false;
+  bool applylepSF      = false;
+  bool applytrigSF     = false;
   bool applyPUrewgt    = true;
-  bool getJECunc       = true;
+  bool getJECunc       = false;
   
   const char* json_file2016 = "data/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt";
   const char* json_file2017 = "data/Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt";
@@ -149,13 +159,22 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
   histonames.push_back("NewApplicationRegion");                   hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
   histonames.push_back("NewApplicationRegionPreselection");       hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
 
+  histonames.push_back("NewSignalRegion_Prefire");                hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewSignalRegion_PrefireUp");              hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewSignalRegion_PrefireDn");              hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewLLControlRegion_Prefire");             hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewLLControlRegion_PrefireUp");           hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewLLControlRegion_PrefireDn");           hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewApplicationRegion_Prefire");           hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewApplicationRegion_PrefireUp");         hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
+  histonames.push_back("NewApplicationRegion_PrefireDn");         hbins.push_back(9); hlow.push_back(0); hup.push_back(9);
   
-  histonames.push_back("SignalRegionTightIso3lv1");                        hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS all tight
-  histonames.push_back("SignalRegionTightIso3lv2");                        hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS only diflavor tight
-  histonames.push_back("SignalRegionTightIso3lv3");                        hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS only pt<30 tight
-  histonames.push_back("SignalRegionTightIso3lv4");                        hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS only pt<30 diflavor
-  histonames.push_back("SignalRegionTightIso3lv5");                        hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS only sublead diflavor tight
-  histonames.push_back("SignalRegionTightIso3lv6");                        hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS only sublead diflavor tight if pt<30
+  histonames.push_back("SignalRegionTightIso3lv1");            hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS all tight
+  histonames.push_back("SignalRegionTightIso3lv2");            hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS only diflavor tight
+  histonames.push_back("SignalRegionTightIso3lv3");            hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS only pt<30 tight
+  histonames.push_back("SignalRegionTightIso3lv4");            hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS only pt<30 diflavor
+  histonames.push_back("SignalRegionTightIso3lv5");            hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS only sublead diflavor tight
+  histonames.push_back("SignalRegionTightIso3lv6");            hbins.push_back(6); hlow.push_back(0); hup.push_back(6);//0SFOS only sublead diflavor tight if pt<30
   histonames.push_back("SignalRegion");                        hbins.push_back(6); hlow.push_back(0); hup.push_back(6);
   histonames.push_back("ApplicationRegion");                   hbins.push_back(6); hlow.push_back(0); hup.push_back(6);
   histonames.push_back("WZControlRegion");                     hbins.push_back(6); hlow.push_back(0); hup.push_back(6);
@@ -450,12 +469,66 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
         cout << " weight_fr_r1_f1 " << weight_fr_r1_f1() << " weight_fr_r1_f0p5 " << weight_fr_r1_f0p5() << " weight_fr_r2_f1 " << weight_fr_r2_f1() << " weight_fr_r2_f2 " << weight_fr_r2_f2() << " weight_fr_r2_f0p5 " << weight_fr_r2_f0p5() << " weight_fr_r0p5_f1 " << weight_fr_r0p5_f1() << " weight_fr_r0p5_f2 " << weight_fr_r0p5_f2() << " weight_fr_r0p5_f0p5 " << weight_fr_r0p5_f0p5() << " weight_pdf_up " << weight_pdf_up() << " weight_pdf_down " << weight_pdf_down() << " weight_alphas_down " << weight_alphas_down() << " weight_alphas_up " << weight_alphas_up() << endl;
 
       }
+      double prefire   = 1;
+      double prefireup = 1;
+      double prefiredn = 1;
+      for(unsigned int i = 0; i<jets_p4().size(); ++i){
+        if(fabs(jets_p4()[i].Eta())<2.0) continue;
+        if(fabs(jets_p4()[i].Eta())>3.0) continue;
+        LorentzVector photonsum(0,0,0,0);
+        bool isphotonorelectron = false;
+        bool print = false;
+        for(unsigned int j = 0; j<genPart_pdgId().size(); ++j){
+          if(fabs(genPart_p4()[j].Eta())<2.0) continue;
+          if(fabs(genPart_p4()[j].Eta())>3.0) continue;
+          if(fabs(genPart_pdgId()[j])!=21&&fabs(genPart_pdgId()[j])!=11) continue;
+          //if(fabs(genPart_pdgId()[j])==11&&fabs(genPart_p4()[j].Eta())>2.4) continue;
+          if(fabs(genPart_pdgId()[j])==21) continue;
+          if(genPart_status()[j]!=71&&genPart_status()[j]!=1) continue;
+          if(dR(jets_p4()[i],genPart_p4()[j])>0.1) continue;
+          if(genPart_p4()[j].Pt()/jets_p4()[i].Pt()<0.85) continue;
+          if(genPart_p4()[j].Pt()/jets_p4()[i].Pt()>1.15) continue;
+          bool checkrecoele = false;
+          if(fabs(genPart_pdgId()[j])==11&&fabs(genPart_p4()[j].Eta())<2.5){
+            for(unsigned int k = 0; k<lep_pdgId().size();++k){
+              if(abs(lep_pdgId()[k])!=11) continue;
+              if(dR(lep_p4()[k],genPart_p4()[j])>0.1) continue;
+              if(genPart_p4()[j].Pt()/lep_p4()[k].Pt()<0.85) continue;
+              if(genPart_p4()[j].Pt()/lep_p4()[k].Pt()>1.15) continue;
+              checkrecoele = true;
+              break;
+            }
+          }
+          if(checkrecoele) isphotonorelectron = false;//we reconstruct the lepton itself - use that one 
+          else             isphotonorelectron = true;//use photon file
+        }
+        if(isphotonorelectron) {
+          prefire   *= (1.-hphot->GetBinContent(hphot->FindBin(jets_p4()[i].Eta(),jets_p4()[i].Pt())) );
+          prefireup *= (1.-hphot->GetBinContent(hphot->FindBin(jets_p4()[i].Eta(),jets_p4()[i].Pt()))+hphot->GetBinError(hphot->FindBin(jets_p4()[i].Eta(),jets_p4()[i].Pt())) );
+          prefiredn *= (1.-hphot->GetBinContent(hphot->FindBin(jets_p4()[i].Eta(),jets_p4()[i].Pt()))-hphot->GetBinError(hphot->FindBin(jets_p4()[i].Eta(),jets_p4()[i].Pt())) );
+        }
+        else {
+          prefire   *= (1.-hjet ->GetBinContent(hjet ->FindBin(jets_p4()[i].Eta(),jets_p4()[i].Pt())) );
+          prefireup *= (1.-hjet ->GetBinContent(hjet ->FindBin(jets_p4()[i].Eta(),jets_p4()[i].Pt()))+hjet ->GetBinError(hjet ->FindBin(jets_p4()[i].Eta(),jets_p4()[i].Pt())) );
+          prefiredn *= (1.-hjet ->GetBinContent(hjet ->FindBin(jets_p4()[i].Eta(),jets_p4()[i].Pt()))-hjet ->GetBinError(hjet ->FindBin(jets_p4()[i].Eta(),jets_p4()[i].Pt())) );
+        }
+      }
+      for(unsigned int i = 0; i<lep_p4().size(); ++i){
+        if(fabs(lep_p4()[i].Eta())<2.0) continue;
+        if(fabs(lep_p4()[i].Eta())>3.0) continue;
+        if(abs(lep_pdgId()[i])!=11) continue;
+        prefire   *= (1.-hphot->GetBinContent(hphot->FindBin(lep_p4()[i].Eta(),lep_p4()[i].Pt())) );
+        prefireup *= (1.-hphot->GetBinContent(hphot->FindBin(lep_p4()[i].Eta(),lep_p4()[i].Pt()))+hphot->GetBinError(hphot->FindBin(lep_p4()[i].Eta(),lep_p4()[i].Pt())) );
+        prefiredn *= (1.-hphot->GetBinContent(hphot->FindBin(lep_p4()[i].Eta(),lep_p4()[i].Pt()))-hphot->GetBinError(hphot->FindBin(lep_p4()[i].Eta(),lep_p4()[i].Pt())) );
+      }
 
-      
       if(!isData()||!blindSR){//SR is blinded
         if(SRf>=0) fillhisto(histos, "NewSignalRegion",               sample, sn, SRf, weight);
         if(SRp>=0) fillhisto(histos, "NewSignalRegionPreselection",   sample, sn, SRp, weight);
-        if(SRf>=0&&isData()){ cout << "SR " << SRf << " run:lumi:evt " << tas::run() << ":" << tas::lumi() << ":" << tas::evt() << endl; }
+
+        if(SRf>=0) fillhisto(histos, "NewSignalRegion_Prefire",       sample, sn, SRf, weight*prefire);
+        if(SRf>=0) fillhisto(histos, "NewSignalRegion_PrefireUp",     sample, sn, SRf, weight*prefireup);
+        if(SRf>=0) fillhisto(histos, "NewSignalRegion_PrefireDn",     sample, sn, SRf, weight*prefiredn);
         int SR3lv2S = SR3l[0];
         if(SR3l[0]==0 && maxMT<90.) SR3lv2S = -1;
         fillSRhisto(histos, "SignalRegion",               sample, sn, SRSS[0], SR3l[0], weight);
@@ -522,8 +595,14 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
         }
       }
       if(CRf>=0) fillhisto(histos, "NewLLControlRegion",               sample, sn, CRf, weight);
+      if(CRf>=0) fillhisto(histos, "NewLLControlRegion_Prefire",       sample, sn, CRf, weight*prefire);
+      if(CRf>=0) fillhisto(histos, "NewLLControlRegion_PrefireUp",     sample, sn, CRf, weight*prefireup);
+      if(CRf>=0) fillhisto(histos, "NewLLControlRegion_PrefireDn",     sample, sn, CRf, weight*prefiredn);
       if(CRp>=0) fillhisto(histos, "NewLLControlRegionPreselection",   sample, sn, CRp, weight);
       if(ARf>=0) fillhisto(histos, "NewApplicationRegion",             sample, sn, ARf, weight);
+      if(ARf>=0) fillhisto(histos, "NewApplicationRegion_Prefire",     sample, sn, ARf, weight*prefire);
+      if(ARf>=0) fillhisto(histos, "NewApplicationRegion_PrefireUp",   sample, sn, ARf, weight*prefireup);
+      if(ARf>=0) fillhisto(histos, "NewApplicationRegion_PrefireDn",   sample, sn, ARf, weight*prefiredn);
       if(ARp>=0) fillhisto(histos, "NewApplicationRegionPreselection", sample, sn, ARp, weight);
       int SR3lv2A = SR3l[2];
       if(SR3l[2]==0 && maxMT<90.) SR3lv2A = -1;
@@ -573,9 +652,8 @@ int ScanChain( TChain* chain, bool fast = true, int nEvents = -1, string skimFil
     storeeventlist("data/ARsb", skimFilePrefix, AREEsb, AREMsb, ARMMsb, dummy4, dummy5, dummy6);
   }
 
-  if(year==2016)      SaveHistosToFile("rootfiles/SRLooper_2016.root",histos,true,true,(chainnumber==0));
-  else if(year==2017) SaveHistosToFile("rootfiles/SRLooper_2017.root",histos,true,true,(chainnumber==0));
-  else                SaveHistosToFile("rootfiles/SRLooper.root",histos,true,true,(chainnumber==0));
+  if(year==2016) SaveHistosToFile("rootfiles/SRLooper_prefire_2016.root",histos,true,true,(chainnumber==0));
+  if(year==2017) SaveHistosToFile("rootfiles/SRLooper_prefire_2017.root",histos,true,true,(chainnumber==0));
   deleteHistograms(histos);
   
   // return
